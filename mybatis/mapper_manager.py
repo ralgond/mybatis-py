@@ -2,11 +2,11 @@ import xml.etree.ElementTree as ET
 from typing import Tuple
 import re
 
-
 class MapperManager:
     def __init__(self):
         self.id_2_element_map = {}
-        self.param_pattern = re.compile(r"#{([a-zA-Z0-9_]+)}")
+        self.param_pattern = re.compile(r"#{([a-zA-Z0-9_\-]+)}")
+        #self.param_pattern_collection = re.compile(r"#{([a-zA-Z0-9_\-]+)}")
 
     def read_mapper_xml_file(self, mapper_xml_file_path):
         root = ET.parse(mapper_xml_file_path).getroot()
@@ -117,6 +117,39 @@ class MapperManager:
                 ret += self.parse_element(child, param)
                 ret += child.tail
             return ret
+        elif element.tag == "foreach":
+            ret = ""
+            item = element.attrib['item']
+            collection = element.attrib['collection']
+            open = element.attrib['open']
+            close = element.attrib['close']
+            separator = element.attrib['separator']
+
+            islist = eval("isinstance("+collection+",list)", param['params'])
+            if not islist:
+                raise Exception("Collection must be a list")
+
+            eval_string = f"[item for item in {collection}]"
+            l = eval(eval_string, param['params'])
+
+            child_ret_l = []
+            for index, _ in enumerate(l):
+                child_ret = ""
+                if element.text is not None:
+                    child_ret += element.text
+                for child in element:
+                    child_ret += self.parse_element(child, param)
+                    child_ret += child.tail
+
+                old_string = "#{" + item + "}"
+                new_string = "#{" + collection + "-" + str(index) + "}"
+                child_ret = child_ret.replace(old_string, new_string)
+                child_ret_l.append(child_ret)
+
+            ret = open + separator.join(child_ret_l) + close
+
+            return ret
+
 
     def _format_sql(self, sql):
         sql = sql.strip()
@@ -127,10 +160,15 @@ class MapperManager:
         ret_param = []
         matches = self.param_pattern.findall(ret)
         for match in matches:
-            if match in param:
-                ret_param.append(param[match])
+            if '-' in match:
+                container_name, index = match.split('-', 1)
+                # print("====>", param[container_name][int(index)])
+                ret_param.append(param[container_name][int(index)])
             else:
-                ret_param.append(None)
+                if match in param:
+                    ret_param.append(param[match])
+                else:
+                    ret_param.append(None)
 
         ret = self.param_pattern.sub("?", ret)
 
@@ -139,9 +177,9 @@ class MapperManager:
         return (ret, ret_param)
 
     def select(self, id: str, param: dict) -> Tuple[str, list]:
-        element = self.id_2_element_map[id]
-        if element is None:
+        if id not in self.id_2_element_map:
             raise Exception("Missing id")
+        element = self.id_2_element_map[id]
         if element.tag != "select":
             raise Exception("Not a select")
 

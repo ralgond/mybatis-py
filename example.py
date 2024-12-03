@@ -26,8 +26,12 @@ def main():
     # sql, param_list = mm.select("testWhere", {'category': "A", "price": 500})
     # print(sql, param_list)
 
-    sql, param_list = mm.select("testChoose", {'category': "banana", "price": 500})
+    # sql, param_list = mm.select("testChoose", {'category': "banana", "price": 500})
+    # print(sql, param_list)
+
+    sql, param_list = mm.select("testForeach", {'names':[1,2,3,4]})
     print(sql, param_list)
+
 
     # cur.execute(sql, param_list, multi=True)
     #

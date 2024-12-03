@@ -100,4 +100,19 @@
             </choose>
         </where>
     </select>
+
+    <select id="testForeach">
+        SELECT
+        name,
+        category,
+        price
+        FROM
+        fruits
+        <where>
+            category = 'apple' AND name IN
+            <foreach collection="names" item="name" open="(" close=")" separator=",">
+                #{name}
+            </foreach>
+        </where>
+    </select>
 </mapper>

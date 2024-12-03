@@ -45,3 +45,15 @@ def test_choose():
     assert len(param_list) == 2
     assert param_list[0] == "banana"
     assert param_list[1] == 500
+
+def test_foreach():
+    mm = MapperManager()
+    mm.read_mapper_xml_file("mapper/test.xml")
+
+    sql, param_list = mm.select("testForeach", {'names': [1, 2, 3, 4]})
+    assert sql == "SELECT name, category, price FROM fruits WHERE category = 'apple' AND name IN ( ? , ? , ? , ? )"
+    assert len(param_list) == 4
+    assert param_list[0] == 1
+    assert param_list[1] == 2
+    assert param_list[2] == 3
+    assert param_list[3] == 4
