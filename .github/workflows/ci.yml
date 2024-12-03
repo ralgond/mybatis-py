@@ -1,0 +1,36 @@
+name: Python CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=my_module --cov-report=xml  # 生成xml格式的报告
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          file: ./coverage.xml  # 提交报告到 Codecov
+
