@@ -27,10 +27,11 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest --cov=my_module --cov-report=xml  # 生成xml格式的报告
+          pytest --cov=mybatis --cov-report=xml test # 生成xml格式的报告
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
         with:
           file: ./coverage.xml  # 提交报告到 Codecov
+          token: ${{ secrets.CODECOV_TOKEN }}
 
