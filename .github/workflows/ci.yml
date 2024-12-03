@@ -12,6 +12,17 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: mybatis
+          MYSQL_DATABASE: mybatis
+          MYSQL_USER: mybatis
+          MYSQL_PASSWORD: mybatis
+        ports:
+          - 3306:3306
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -23,7 +34,18 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov mysql-connector-python
+
+      - name: Set up MySQL client
+        run: sudo apt-get install mysql-client
+
+      - name: Wait for MySQL to be ready
+        run: |
+          until mysql -h 127.0.0.1 -u mybatis -pmybatis -e "SELECT 1"; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          echo "MySQL is ready!"
 
       - name: Run tests with coverage
         run: |

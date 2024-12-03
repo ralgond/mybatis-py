@@ -11,6 +11,7 @@ setup(
     url='https://github.com/ralgond/mybatis-py',
     packages=find_packages(),
     install_requires=[
+        'mysql-connector-python>=9.0.0'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

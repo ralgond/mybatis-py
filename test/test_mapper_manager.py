@@ -1,5 +1,5 @@
-import pytest
 from mybatis import MapperManager
+
 
 def test_include():
     mm = MapperManager()

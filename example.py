@@ -12,6 +12,10 @@ conn = mysql.connector.connect(
 
 cur = conn.cursor(prepared=True)
 
+class A:
+    def __init__(self):
+        pass
+
 def main():
     mm = MapperManager()
 
@@ -44,6 +48,8 @@ def main():
     #
     # res = cur.fetchall()
     # print(res)
+
+    print(globals()['A'])
 
 if __name__ == "__main__":
     main()

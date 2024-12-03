@@ -28,7 +28,7 @@
         FROM
         fruits
         WHERE
-        category = 'apple' AND
+        category = 'A' AND
         <![CDATA[ price < 500 ]]>
     </select>
 
