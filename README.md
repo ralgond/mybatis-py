@@ -3,3 +3,5 @@
 
 
 A python ORM like mybatis.
+
+## Dynamic SQL
