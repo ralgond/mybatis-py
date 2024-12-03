@@ -1,4 +1,4 @@
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as et
 from typing import Tuple, Set
 import re
 
@@ -8,7 +8,7 @@ class MapperManager:
         self.param_pattern = re.compile(r"#{([a-zA-Z0-9_\-]+)}")
 
     def read_mapper_xml_file(self, mapper_xml_file_path):
-        root = ET.parse(mapper_xml_file_path).getroot()
+        root = et.parse(mapper_xml_file_path).getroot()
         for child in root.iter():
             if child.tag == 'mapper':
                 root = child
@@ -34,7 +34,7 @@ class MapperManager:
 
         return " ".join(l[idx:])
 
-    def parse_element(self, element : ET.Element, param: dict) -> str:
+    def parse_element(self, element : et.Element, param: dict) -> str:
         # print ("++++>", element)
         ret = ""
         # if element.text is not None:
@@ -86,8 +86,8 @@ class MapperManager:
                 return "WHERE " + ' '.join(l[idx:])
         elif element.tag == "trim":
             prefix = element.attrib['prefix']
-            prefixOverridesSet = set()
-            [prefixOverridesSet.add(term.strip()) for term in element.attrib['prefixOverrides'].split("|")]
+            prefix_overrides_set = set()
+            [prefix_overrides_set.add(term.strip()) for term in element.attrib['prefixOverrides'].split("|")]
 
             ret = ""
             if element.text is not None:
@@ -96,12 +96,12 @@ class MapperManager:
                 ret += self.parse_element(child, param)
                 ret += child.tail
 
-            ret = MapperManager._trim_prefix(ret, prefixOverridesSet)
+            ret = MapperManager._trim_prefix(ret, prefix_overrides_set)
             return prefix + " " + ret
 
         elif element.tag == "set":
-            prefixOverridesSet = set()
-            prefixOverridesSet.add(",")
+            prefix_overrides_set = set()
+            prefix_overrides_set.add(",")
 
             ret = ""
             if element.text is not None:
@@ -110,7 +110,7 @@ class MapperManager:
                 ret += self.parse_element(child, param)
                 ret += child.tail
 
-            ret = MapperManager._trim_prefix(ret, prefixOverridesSet)
+            ret = MapperManager._trim_prefix(ret, prefix_overrides_set)
             return "SET " + ret
 
         elif element.tag == "choose":
@@ -154,7 +154,6 @@ class MapperManager:
                 ret += child.tail
             return ret
         elif element.tag == "foreach":
-            ret = ""
             item = element.attrib['item']
             collection = element.attrib['collection']
             open = element.attrib['open']
@@ -186,8 +185,8 @@ class MapperManager:
 
             return ret
 
-
-    def _format_sql(self, sql):
+    @staticmethod
+    def _format_sql(sql):
         sql = sql.strip()
         l = sql.split()
         return ' '.join(l)
@@ -208,7 +207,7 @@ class MapperManager:
 
         ret = self.param_pattern.sub("?", ret)
 
-        ret = self._format_sql(ret)
+        ret = MapperManager._format_sql(ret)
 
         return (ret, ret_param)
 
