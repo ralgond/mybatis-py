@@ -32,9 +32,11 @@ def main():
     # sql, param_list = mm.select("testForeach", {'names':[1,2,3,4]})
     # print(sql, param_list)
 
-    sql, param_list = mm.select("testTrim", {'names': [1, 2, 3, 4]})
-    print(sql, param_list)
+    # sql, param_list = mm.select("testTrim", {'names': [1, 2, 3, 4]})
+    # print(sql, param_list)
 
+    sql, param_list = mm.update("testSet", {'category': "banana", "price": 500, "name":"a"})
+    print(sql, param_list)
 
     # cur.execute(sql, param_list, multi=True)
     #

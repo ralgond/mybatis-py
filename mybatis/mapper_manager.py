@@ -99,6 +99,20 @@ class MapperManager:
             ret = MapperManager._trim_prefix(ret, prefixOverridesSet)
             return prefix + " " + ret
 
+        elif element.tag == "set":
+            prefixOverridesSet = set()
+            prefixOverridesSet.add(",")
+
+            ret = ""
+            if element.text is not None:
+                ret += element.text
+            for child in element:
+                ret += self.parse_element(child, param)
+                ret += child.tail
+
+            ret = MapperManager._trim_prefix(ret, prefixOverridesSet)
+            return "SET " + ret
+
         elif element.tag == "choose":
             ok = False
             for child in element:
@@ -204,6 +218,23 @@ class MapperManager:
         element = self.id_2_element_map[id]
         if element.tag != "select":
             raise Exception("Not a select")
+
+        ret = ""
+        if element.text is not None:
+            ret += element.text
+        param0 = {'params': param}
+        for child in element:
+            ret += self.parse_element(child, param0)
+            ret += child.tail
+
+        return self._to_prepared_statement(ret, param)
+
+    def update(self, id: str, param: dict) -> Tuple[str, list]:
+        if id not in self.id_2_element_map:
+            raise Exception("Missing id")
+        element = self.id_2_element_map[id]
+        if element.tag != "update":
+            raise Exception("Not an update")
 
         ret = ""
         if element.text is not None:

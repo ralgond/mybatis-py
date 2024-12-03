@@ -132,4 +132,19 @@
             (type = 1 OR type= 0)
         </trim>
     </select>
+
+    <update id="testSet">
+        UPDATE
+        fruits
+        <set>
+            <if test="'category' in params">
+                category = #{category},
+            </if>
+            <if test="'price' in params">
+                price = #{price}
+            </if>
+        </set>
+        WHERE
+        name = #{name}
+    </update>
 </mapper>

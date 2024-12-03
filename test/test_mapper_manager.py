@@ -64,3 +64,14 @@ def test_trim():
 
     sql, param_list = mm.select("testTrim", {'names': [1, 2, 3, 4]})
     assert sql == "SELECT name, category, price FROM fruits WHERE category = 'apple' OR price = 200 AND (type = 1 OR type= 0)"
+
+def test_set():
+    mm = MapperManager()
+    mm.read_mapper_xml_file("mapper/test.xml")
+
+    sql, param_list = mm.update("testSet", {'category': "banana", "price": 500, "name": "a"})
+    assert sql == "UPDATE fruits SET category = ?, price = ? WHERE name = ?"
+    assert len(param_list) == 3
+    assert param_list[0] == "banana"
+    assert param_list[1] == 500
+    assert param_list[2] == "a"
