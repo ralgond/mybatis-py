@@ -57,3 +57,10 @@ def test_foreach():
     assert param_list[1] == 2
     assert param_list[2] == 3
     assert param_list[3] == 4
+
+def test_trim():
+    mm = MapperManager()
+    mm.read_mapper_xml_file("mapper/test.xml")
+
+    sql, param_list = mm.select("testTrim", {'names': [1, 2, 3, 4]})
+    assert sql == "SELECT name, category, price FROM fruits WHERE category = 'apple' OR price = 200 AND (type = 1 OR type= 0)"

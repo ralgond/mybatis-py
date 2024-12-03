@@ -115,4 +115,21 @@
             </foreach>
         </where>
     </select>
+
+    <select id="testTrim">
+        SELECT
+        name,
+        category,
+        price
+        FROM
+        fruits
+
+        <trim prefix="WHERE" prefixOverrides="OR">
+            OR category = 'apple'
+            OR price = 200
+        </trim>
+        <trim prefix="AND" prefixOverrides="OR">
+            (type = 1 OR type= 0)
+        </trim>
+    </select>
 </mapper>

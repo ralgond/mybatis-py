@@ -1,12 +1,11 @@
 import xml.etree.ElementTree as ET
-from typing import Tuple
+from typing import Tuple, Set
 import re
 
 class MapperManager:
     def __init__(self):
         self.id_2_element_map = {}
         self.param_pattern = re.compile(r"#{([a-zA-Z0-9_\-]+)}")
-        #self.param_pattern_collection = re.compile(r"#{([a-zA-Z0-9_\-]+)}")
 
     def read_mapper_xml_file(self, mapper_xml_file_path):
         root = ET.parse(mapper_xml_file_path).getroot()
@@ -22,10 +21,18 @@ class MapperManager:
             self.id_2_element_map[child_id] = child
 
 
-    def debug_dump(self):
-        for child_id, child in self.id_2_element_map.items():
-            print(child_id)
-            print(child.text)
+    @staticmethod
+    def _trim_prefix(s : str, prefixes : Set[str]):
+        l = [term.strip() for term in s.split()]
+        idx = 0
+        for term in l:
+            if term in prefixes:
+                idx += 1
+                continue
+            else:
+                break
+
+        return " ".join(l[idx:])
 
     def parse_element(self, element : ET.Element, param: dict) -> str:
         # print ("++++>", element)
@@ -77,6 +84,21 @@ class MapperManager:
                 return ""
             else:
                 return "WHERE " + ' '.join(l[idx:])
+        elif element.tag == "trim":
+            prefix = element.attrib['prefix']
+            prefixOverridesSet = set()
+            [prefixOverridesSet.add(term.strip()) for term in element.attrib['prefixOverrides'].split("|")]
+
+            ret = ""
+            if element.text is not None:
+                ret += element.text
+            for child in element:
+                ret += self.parse_element(child, param)
+                ret += child.tail
+
+            ret = MapperManager._trim_prefix(ret, prefixOverridesSet)
+            return prefix + " " + ret
+
         elif element.tag == "choose":
             ok = False
             for child in element:

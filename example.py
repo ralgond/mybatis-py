@@ -29,7 +29,10 @@ def main():
     # sql, param_list = mm.select("testChoose", {'category': "banana", "price": 500})
     # print(sql, param_list)
 
-    sql, param_list = mm.select("testForeach", {'names':[1,2,3,4]})
+    # sql, param_list = mm.select("testForeach", {'names':[1,2,3,4]})
+    # print(sql, param_list)
+
+    sql, param_list = mm.select("testTrim", {'names': [1, 2, 3, 4]})
     print(sql, param_list)
 
 
