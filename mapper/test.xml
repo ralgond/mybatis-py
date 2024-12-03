@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper>
+    <sql id="sometable">
+        fruits
+    </sql>
+    <sql id="somewhere">
+        WHERE
+        category = #{category}
+    </sql>
+    <sql id="someinclude">
+        FROM
+        <!--<include refid="${include_target}"/>-->
+        <include refid="sometable"/>
+        <include refid="somewhere"/>
+    </sql>
+
+
+    <delete id="deleteById">
+        delete from fruits where id =#{id}
+    </delete>
+    <select id="testBasic">
+        SELECT
+        id,
+        name,
+        category,
+        price
+        FROM
+        fruits
+        WHERE
+        category = 'apple' AND
+        <![CDATA[ price < 500 ]]>
+    </select>
+
+    <select id="testInclude">
+        SELECT
+        name,
+        category,
+        price
+        <include refid="someinclude" />
+    </select>
+
+    <select id="testIf">
+        SELECT
+        name,
+        category,
+        price
+        FROM
+        fruits
+        WHERE
+        1=1
+        <if test="'category' in params">
+            AND category = #{category}
+        </if>
+        <if test="'price' in params">
+            AND price = #{price}
+            <if test="params['price'] >= 400">
+                AND name = 'pear'
+            </if>
+        </if>
+        AND 1=1
+    </select>
+
+    <select id="testWhere">
+        SELECT
+        name,
+        category,
+        price
+        FROM
+        fruits
+        <where>
+            AND category = 'apple'
+            <if test="'price' in params ">
+                AND price = #{price}
+            </if>
+        </where>
+    </select>
+
+    <select id="testChoose">
+        SELECT
+        name,
+        category,
+        price
+        FROM
+        fruits
+        <where>
+            <choose>
+                <when test="'name' in params">
+                    AND name = #{name}
+                </when>
+                <when test="'category' in params and  params['category'] == 'banana'">
+                    AND category = #{category}
+                    <if test="'price' in params">
+                        AND price = #{price}
+                    </if>
+                </when>
+                <otherwise>
+                    AND category = 'apple'
+                </otherwise>
+            </choose>
+        </where>
+    </select>
+</mapper>
