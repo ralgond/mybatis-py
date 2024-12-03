@@ -1,5 +1,5 @@
 # mybatis-py
-[![codecov](https://codecov.io/gh/yourusername/yourrepository/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/yourrepository)
+[![codecov](https://codecov.io/gh/ralgond/mybatis-py/branch/main/graph/badge.svg)](https://codecov.io/gh/ralgond/mybatis-py)
 
 
 A python ORM like mybatis.
