@@ -75,3 +75,12 @@ def test_set():
     assert param_list[0] == "banana"
     assert param_list[1] == 500
     assert param_list[2] == "a"
+
+def test_dollar():
+    mm = MapperManager()
+    mm.read_mapper_xml_file("mapper/test.xml")
+
+    sql, param_list = mm.select("testStringReplace", {'id': 1, 'date': "20241204"})
+    assert sql == "SELECT * from fruits_20241204 where id=?"
+    assert len(param_list) == 1
+    assert param_list[0] == 1
