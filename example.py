@@ -39,7 +39,10 @@ def main():
     # sql, param_list = mm.select("testTrim", {'names': [1, 2, 3, 4]})
     # print(sql, param_list)
 
-    sql, param_list = mm.update("testSet", {'category': "banana", "price": 500, "name":"a"})
+    # sql, param_list = mm.update("testSet", {'category': "banana", "price": 500, "name":"a"})
+    # print(sql, param_list)
+
+    sql, param_list = mm.select("testStringReplace", {'id':1, 'date':"20241204"})
     print(sql, param_list)
 
     # cur.execute(sql, param_list, multi=True)
@@ -49,7 +52,7 @@ def main():
     # res = cur.fetchall()
     # print(res)
 
-    print(globals()['A'])
+    # print(globals()['A'])
 
 if __name__ == "__main__":
     main()

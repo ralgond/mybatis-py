@@ -6,6 +6,7 @@ class MapperManager:
     def __init__(self):
         self.id_2_element_map = {}
         self.param_pattern = re.compile(r"#{([a-zA-Z0-9_\-]+)}")
+        self.replace_pattern = re.compile(r"\${([a-zA-Z0-9_\-]+)}")
 
     def read_mapper_xml_file(self, mapper_xml_file_path):
         root = et.parse(mapper_xml_file_path).getroot()
@@ -211,6 +212,16 @@ class MapperManager:
 
         return (ret, ret_param)
 
+    def _to_replace(self, ret, param) -> str:
+        matches = self.replace_pattern.findall(ret)
+        for match in matches:
+            value = ""
+            if match in param:
+                value = param[match]
+            ret = ret.replace("${"+match+"}", value)
+        return ret
+
+
     def select(self, id: str, params: dict) -> Tuple[str, list]:
         if id not in self.id_2_element_map:
             raise Exception("Missing id")
@@ -226,7 +237,9 @@ class MapperManager:
             ret += self.parse_element(child, param0)
             ret += child.tail
 
-        return self._to_prepared_statement(ret, params)
+        sql, sql_param = self._to_prepared_statement(ret, params)
+        sql = self._to_replace(sql, params)
+        return (sql, sql_param)
 
     def update(self, id: str, params: dict) -> Tuple[str, list]:
         if id not in self.id_2_element_map:
@@ -243,7 +256,9 @@ class MapperManager:
             ret += self.parse_element(child, param0)
             ret += child.tail
 
-        return self._to_prepared_statement(ret, params)
+        sql, sql_param = self._to_prepared_statement(ret, params)
+        sql = self._to_replace(sql, params)
+        return (sql, sql_param)
 
     def delete(self, id: str, params: dict) -> Tuple[str, list]:
         if id not in self.id_2_element_map:
@@ -260,7 +275,9 @@ class MapperManager:
             ret += self.parse_element(child, param0)
             ret += child.tail
 
-        return self._to_prepared_statement(ret, params)
+        sql, sql_param = self._to_prepared_statement(ret, params)
+        sql = self._to_replace(sql, params)
+        return (sql, sql_param)
 
     def insert(self, id: str, params: dict) -> Tuple[str, list]:
         if id not in self.id_2_element_map:
@@ -277,4 +294,6 @@ class MapperManager:
             ret += self.parse_element(child, param0)
             ret += child.tail
 
-        return self._to_prepared_statement(ret, params)
+        sql, sql_param = self._to_prepared_statement(ret, params)
+        sql = self._to_replace(sql, params)
+        return (sql, sql_param)

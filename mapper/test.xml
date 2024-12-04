@@ -147,4 +147,8 @@
         WHERE
         name = #{name}
     </update>
+
+    <select id="testStringReplace">
+        SELECT * from fruits_${date} where id=#{id}
+    </select>
 </mapper>
