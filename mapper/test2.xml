@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper>
+    <select id="testBasicById">
+        SELECT
+        id,
+        name,
+        category,
+        price
+        FROM
+        fruits
+        WHERE id=#{id}
+    </select>
+
     <select id="testBasicNone">
         SELECT
         id,
@@ -12,4 +23,26 @@
         WHERE
         category = 'C'
     </select>
+
+    <select id="testBasicMany">
+        SELECT
+        id,
+        name,
+        category,
+        price
+        FROM
+        fruits
+    </select>
+
+    <update id="testUpdate">
+        UPDATE fruits SET name=#{name} WHERE id=#{id}
+    </update>
+
+    <delete id="testDelete">
+        DELETE FROM fruits WHERE id=#{id}
+    </delete>
+
+    <insert id="testInsert">
+        INSERT INTO fruits(name, category, price) VALUES (#{name}, #{category}, #{price})
+    </insert>
 </mapper>

@@ -47,3 +47,75 @@ def test_select_one_none(db_connection):
     mb = Mybatis(db_connection, "mapper")
     ret = mb.select_one('testBasicNone', {})
     assert ret is None
+
+def test_select_many(db_connection):
+    mb = Mybatis(db_connection, "mapper")
+    ret = mb.select_many('testBasicMany', {})
+    assert ret is not None
+    assert isinstance(ret, list)
+    assert len(ret) == 2
+    assert ret[0]['id'] == 1
+    assert ret[0]['name'] == 'Alice'
+    assert ret[0]['category'] == 'A'
+    assert ret[0]['price'] == 100
+    assert ret[1]['id'] == 2
+    assert ret[1]['name'] == 'Bob'
+    assert ret[1]['category'] == 'B'
+    assert ret[1]['price'] == 200
+
+def test_select_many_none(db_connection):
+    mb = Mybatis(db_connection, "mapper")
+    ret = mb.select_many('testBasicNone', {})
+    assert len(ret) == 0
+
+def test_update(db_connection):
+    mb = Mybatis(db_connection, "mapper")
+    ret = mb.update("testUpdate", {"name":"Candy", "id":2})
+    assert ret == 1
+    ret = mb.select_many('testBasicMany', {})
+    assert ret is not None
+    assert isinstance(ret, list)
+    assert len(ret) == 2
+    assert ret[0]['id'] == 1
+    assert ret[0]['name'] == 'Alice'
+    assert ret[0]['category'] == 'A'
+    assert ret[0]['price'] == 100
+    assert ret[1]['id'] == 2
+    assert ret[1]['name'] == 'Candy'
+    assert ret[1]['category'] == 'B'
+    assert ret[1]['price'] == 200
+
+def test_delete(db_connection):
+    mb = Mybatis(db_connection, "mapper")
+    ret = mb.delete("testDelete", {"id":2})
+    assert ret == 1
+    ret = mb.select_many('testBasicMany', {})
+    assert ret is not None
+    assert isinstance(ret, list)
+    assert len(ret) == 1
+    assert ret[0]['id'] == 1
+    assert ret[0]['name'] == 'Alice'
+    assert ret[0]['category'] == 'A'
+    assert ret[0]['price'] == 100
+
+def test_insert(db_connection):
+    mb = Mybatis(db_connection, "mapper")
+    ret = mb.insert("testInsert", {"name": "Candy", "category": "B", "price": 200})
+    assert ret == 3
+
+    ret = mb.select_many('testBasicMany', {})
+    assert ret is not None
+    assert isinstance(ret, list)
+    assert len(ret) == 3
+    assert ret[0]['id'] == 1
+    assert ret[0]['name'] == 'Alice'
+    assert ret[0]['category'] == 'A'
+    assert ret[0]['price'] == 100
+    assert ret[1]['id'] == 2
+    assert ret[1]['name'] == 'Bob'
+    assert ret[1]['category'] == 'B'
+    assert ret[1]['price'] == 200
+    assert ret[2]['id'] == 3
+    assert ret[2]['name'] == 'Candy'
+    assert ret[2]['category'] == 'B'
+    assert ret[2]['price'] == 200

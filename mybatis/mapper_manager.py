@@ -211,7 +211,7 @@ class MapperManager:
 
         return (ret, ret_param)
 
-    def select(self, id: str, param: dict) -> Tuple[str, list]:
+    def select(self, id: str, params: dict) -> Tuple[str, list]:
         if id not in self.id_2_element_map:
             raise Exception("Missing id")
         element = self.id_2_element_map[id]
@@ -221,14 +221,14 @@ class MapperManager:
         ret = ""
         if element.text is not None:
             ret += element.text
-        param0 = {'params': param}
+        param0 = {'params': params}
         for child in element:
             ret += self.parse_element(child, param0)
             ret += child.tail
 
-        return self._to_prepared_statement(ret, param)
+        return self._to_prepared_statement(ret, params)
 
-    def update(self, id: str, param: dict) -> Tuple[str, list]:
+    def update(self, id: str, params: dict) -> Tuple[str, list]:
         if id not in self.id_2_element_map:
             raise Exception("Missing id")
         element = self.id_2_element_map[id]
@@ -238,9 +238,43 @@ class MapperManager:
         ret = ""
         if element.text is not None:
             ret += element.text
-        param0 = {'params': param}
+        param0 = {'params': params}
         for child in element:
             ret += self.parse_element(child, param0)
             ret += child.tail
 
-        return self._to_prepared_statement(ret, param)
+        return self._to_prepared_statement(ret, params)
+
+    def delete(self, id: str, params: dict) -> Tuple[str, list]:
+        if id not in self.id_2_element_map:
+            raise Exception("Missing id")
+        element = self.id_2_element_map[id]
+        if element.tag != "delete":
+            raise Exception("Not a delete")
+
+        ret = ""
+        if element.text is not None:
+            ret += element.text
+        param0 = {'params': params}
+        for child in element:
+            ret += self.parse_element(child, param0)
+            ret += child.tail
+
+        return self._to_prepared_statement(ret, params)
+
+    def insert(self, id: str, params: dict) -> Tuple[str, list]:
+        if id not in self.id_2_element_map:
+            raise Exception("Missing id")
+        element = self.id_2_element_map[id]
+        if element.tag != "insert":
+            raise Exception("Not an insert")
+
+        ret = ""
+        if element.text is not None:
+            ret += element.text
+        param0 = {'params': params}
+        for child in element:
+            ret += self.parse_element(child, param0)
+            ret += child.tail
+
+        return self._to_prepared_statement(ret, params)
