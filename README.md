@@ -30,7 +30,7 @@ INSERT INTO fruits (name, category, price) VALUES ('Bob', 'B', 200)
 
 refer to [test_mybatis.py](https://github.com/ralgond/mybatis-py/blob/main/test/test_mybatis.py)、[test2.xml](https://github.com/ralgond/mybatis-py/blob/main/mapper/test.xml)
 
-创建一个mapper目录，创建一个文件mapper/test.xml，如下:
+Create a mapper directory, and create a file named mapper/test.xml, as follows:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -40,18 +40,17 @@ refer to [test_mybatis.py](https://github.com/ralgond/mybatis-py/blob/main/test/
     </select>
 </mapper>
 ```
-编写python文件test.py, 如下：
+Create a Python file named "test.py" as follows:
 ```python
 from mybatis import *
 import mysql.connector
 
 def main():
-    # 连接到 MySQL 数据库
     conn = mysql.connector.connect(
-        host="localhost",  # MySQL 主机地址
-        user="mybatis",  # MySQL 用户名
-        password="mybatis",  # MySQL 密码
-        database="mybatis"  # 需要连接的数据库
+        host="localhost",
+        user="mybatis",
+        password="mybatis",
+        database="mybatis"
     )
 
     mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024)
@@ -65,16 +64,16 @@ if __name__ == "__main__":
 ```
 
 ## Dynamic SQL
-### ${}和#{}的区别
-#{}是一个占位符，为prepared statement而存在，在MapperManager处理后会变成字符'?'；
-${}表示简单的字符串替换。下面一个例子能说明它的区别：
+### The difference between ${} and #{} 
+#{} is a placeholder that exists for prepared statement and will become the character '?' after processing by MapperManager.
+${} represents simple string replacement. The following example illustrates the difference:
 ```python
 from mybatis import *
 
 mm = MapperManager()
 
 '''
-test.xml的内容如下：
+The contents of test.xml are as follows:
 
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -89,26 +88,25 @@ mm.read_mapper_xml_file("mapper/test.xml")
 sql, param_list = mm.select("testStringReplace", {'id':1, 'date':"20241204"})
 print(sql, param_list)
 ```
-结果是
+The result is as follows:
 ```bash
 SELECT * from fruits_20241204 where id=? [1]
 ```
-可以看见${date}被替换成"20241204"，而#{id}替换成了'?'，同时param_list中只有一个参数值为1。
+You can see that ${date} is replaced with "20241204", and #{id} is replaced with '?', and only one parameter value in param_list is 1.
 
-基于安全性的考虑，为了防止SQL注入，建议只要能使用#{}就不要使用${}，除非你有足够的把握。
+Based on security considerations, in order to prevent SQL injection, it is recommended not to use ${} as long as #{} can be used, unless you are confident enough.
 
 ## Cache
-mybatis-py为每条连接维护一个缓存池，淘汰策略是LRU，你可以定义池最大的字节容量，如果你不想使用cache，可以设置参数配置，代码如下：
+mybatis-py maintains a cache pool for each connection. The elimination strategy is LRU. You can define the maximum byte capacity of the pool. If you do not want to use cache, you can set the parameter configuration. The code is as follows:
 ```python
 def main():
-    # 连接到 MySQL 数据库
     # conn = mysql.connector.connect(
-    #     host="localhost",  # MySQL 主机地址
-    #     user="mybatis",  # MySQL 用户名
-    #     password="mybatis",  # MySQL 密码
-    #     database="mybatis"  # 需要连接的数据库
+    #     host="localhost",
+    #     user="mybatis",
+    #     password="mybatis",
+    #     database="mybatis"
     # )
 
-    mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024) # 容量上限为50MB
-    mb2 = Mybatis(conn, "mapper", cache_memory_limit=None) # 不开启缓存
+    mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024) # Capacity limit is 50MB
+    mb2 = Mybatis(conn, "mapper", cache_memory_limit=None) # Disable caching
 ```
