@@ -95,3 +95,19 @@ SELECT * from fruits_20241204 where id=? [1]
 可以看见${date}被替换成"20241204"，而#{id}替换成了'?'，同时param_list中只有一个参数值为1。
 
 基于安全性的考虑，为了防止SQL注入，建议只要能使用#{}就不要使用${}，除非你有足够的把握。
+
+## Cache
+mybatis-py为每条连接维护一个缓存池，淘汰策略是LRU，你可以定义池最大的字节容量，如果你不想使用cache，可以设置参数配置，代码如下：
+```python
+def main():
+    # 连接到 MySQL 数据库
+    # conn = mysql.connector.connect(
+    #     host="localhost",  # MySQL 主机地址
+    #     user="mybatis",  # MySQL 用户名
+    #     password="mybatis",  # MySQL 密码
+    #     database="mybatis"  # 需要连接的数据库
+    # )
+
+    mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024) # 容量上限为50MB
+    mb2 = Mybatis(conn, "mapper", cache_memory_limit=None) # 不开启缓存
+```
