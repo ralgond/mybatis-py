@@ -34,7 +34,7 @@ def db_connection():
     connection.close()
 
 def test_select_one(db_connection):
-    mb = Mybatis(db_connection, "mapper")
+    mb = Mybatis(db_connection, "mapper", cache_memory_limit=50*1024*1024)
     ret = mb.select_one('testBasic', {})
     assert ret is not None
     assert len(ret) == 4
@@ -43,13 +43,36 @@ def test_select_one(db_connection):
     assert ret['category'] == 'A'
     assert ret['price'] == 100
 
+    ret = mb.select_one('testBasic', {})
+    assert ret is not None
+    assert len(ret) == 4
+    assert ret['id'] == 1
+    assert ret['name'] == 'Alice'
+    assert ret['category'] == 'A'
+    assert ret['price'] == 100
+
+
+
 def test_select_one_none(db_connection):
     mb = Mybatis(db_connection, "mapper")
     ret = mb.select_one('testBasicNone', {})
     assert ret is None
 
 def test_select_many(db_connection):
-    mb = Mybatis(db_connection, "mapper")
+    mb = Mybatis(db_connection, "mapper", cache_memory_limit=50*1024*1024)
+    ret = mb.select_many('testBasicMany', {})
+    assert ret is not None
+    assert isinstance(ret, list)
+    assert len(ret) == 2
+    assert ret[0]['id'] == 1
+    assert ret[0]['name'] == 'Alice'
+    assert ret[0]['category'] == 'A'
+    assert ret[0]['price'] == 100
+    assert ret[1]['id'] == 2
+    assert ret[1]['name'] == 'Bob'
+    assert ret[1]['category'] == 'B'
+    assert ret[1]['price'] == 200
+
     ret = mb.select_many('testBasicMany', {})
     assert ret is not None
     assert isinstance(ret, list)
@@ -70,7 +93,14 @@ def test_select_many_none(db_connection):
 
 def test_update(db_connection):
     mb = Mybatis(db_connection, "mapper")
+    mb.select_one('testBasic', {})
+
+    assert mb.cache.empty() is True
+
     ret = mb.update("testUpdate", {"name":"Candy", "id":2})
+
+    assert mb.cache.empty() is True
+
     assert ret == 1
     ret = mb.select_many('testBasicMany', {})
     assert ret is not None
@@ -84,6 +114,35 @@ def test_update(db_connection):
     assert ret[1]['name'] == 'Candy'
     assert ret[1]['category'] == 'B'
     assert ret[1]['price'] == 200
+
+    assert mb.cache.empty() is True
+
+
+def test_update_with_cache(db_connection):
+    mb = Mybatis(db_connection, "mapper", cache_memory_limit=50*1024*1024)
+    mb.select_one('testBasic', {})
+
+    assert mb.cache.empty() is False
+
+    ret = mb.update("testUpdate", {"name":"Candy", "id":2})
+
+    assert mb.cache.empty() is True
+
+    assert ret == 1
+    ret = mb.select_many('testBasicMany', {})
+    assert ret is not None
+    assert isinstance(ret, list)
+    assert len(ret) == 2
+    assert ret[0]['id'] == 1
+    assert ret[0]['name'] == 'Alice'
+    assert ret[0]['category'] == 'A'
+    assert ret[0]['price'] == 100
+    assert ret[1]['id'] == 2
+    assert ret[1]['name'] == 'Candy'
+    assert ret[1]['category'] == 'B'
+    assert ret[1]['price'] == 200
+
+    assert mb.cache.empty() is False
 
 def test_delete(db_connection):
     mb = Mybatis(db_connection, "mapper")
