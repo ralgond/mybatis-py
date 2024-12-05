@@ -100,13 +100,22 @@ Based on security considerations, in order to prevent SQL injection, it is recom
 mybatis-py maintains a cache pool for each connection. The elimination strategy is LRU. You can define the maximum byte capacity of the pool. If you do not want to use cache, you can set the parameter configuration. The code is as follows:
 ```python
 def main():
-    # conn = mysql.connector.connect(
+    # conn1 = mysql.connector.connect(
     #     host="localhost",
     #     user="mybatis",
     #     password="mybatis",
     #     database="mybatis"
     # )
 
-    mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024) # Capacity limit is 50MB
-    mb2 = Mybatis(conn, "mapper", cache_memory_limit=None) # Disable caching
+    # conn2 = mysql.connector.connect(
+    #     host="localhost",
+    #     user="mybatis",
+    #     password="mybatis",
+    #     database="mybatis"
+    # )
+
+    mb1 = Mybatis(conn1, "mapper", cache_memory_limit=50*1024*1024) # Capacity limit is 50MB
+    mb2 = Mybatis(conn2, "mapper", cache_memory_limit=None) # Disable caching
 ```
+### Timeout mechanism
+In order to prevent users from always getting old data, the cache will determine whether the key-value has expired when fetching a key-value. The maximum life milliseconds of the key-value can be specified through the max_live_ms parameter in the constructor of the Mybatis class.
