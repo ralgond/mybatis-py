@@ -151,4 +151,8 @@
     <select id="testStringReplace">
         SELECT * from fruits_${date} where id=#{id}
     </select>
+
+    <select id="testBasic1">
+        SELECT * from fruits where id=#{id}
+    </select>
 </mapper>

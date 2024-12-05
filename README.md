@@ -29,6 +29,40 @@ INSERT INTO fruits (name, category, price) VALUES ('Bob', 'B', 200)
 
 refer to [test_mybatis.py](https://github.com/ralgond/mybatis-py/blob/main/test/test_mybatis.py)、[test2.xml](https://github.com/ralgond/mybatis-py/blob/main/mapper/test.xml)
 
+创建一个mapper目录，创建一个文件mapper/test.xml，如下:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper>
+    <select id="testBasic1">
+        SELECT * from fruits where id=#{id}
+    </select>
+</mapper>
+```
+编写python文件test.py, 如下：
+```python
+from mybatis import *
+import mysql.connector
+
+def main():
+    # 连接到 MySQL 数据库
+    conn = mysql.connector.connect(
+        host="localhost",  # MySQL 主机地址
+        user="mybatis",  # MySQL 用户名
+        password="mybatis",  # MySQL 密码
+        database="mybatis"  # 需要连接的数据库
+    )
+
+    mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024)
+
+    ret = mb.select_one("testBasic1", {'id':1})
+
+    print(ret)
+
+if __name__ == "__main__":
+    main()
+```
+
 ## Dynamic SQL
 ### ${}和#{}的区别
 #{}是一个占位符，为prepared statement而存在，在MapperManager处理后会变成字符'?'；

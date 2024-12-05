@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mybatis',
-    version='0.0.3',
+    version='0.0.4',
     description='A python ORM like mybatis.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',  # 如果你使用的是Markdown格式的README
@@ -16,7 +16,8 @@ setup(
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: Apache License',
+        # 'License :: OSI Approved :: Apache-2.0 License',
+        'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
     ],
     python_requires='>=3.8',
