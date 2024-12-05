@@ -155,4 +155,30 @@
     <select id="testBasic1">
         SELECT * from fruits where id=#{id}
     </select>
+
+    <insert id="testInsertSelective">
+        insert into fruits
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="'name' in params">
+                name,
+            </if>
+            <if test="'category' in params">
+                category,
+            </if>
+            <if test="'price' in params">
+                price,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="'name' in params">
+                #{name},
+            </if>
+            <if test="'category' in params">
+                #{category},
+            </if>
+            <if test="'price' in params">
+                #{price},
+            </if>
+        </trim>
+    </insert>
 </mapper>

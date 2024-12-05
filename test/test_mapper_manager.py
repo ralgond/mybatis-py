@@ -65,6 +65,17 @@ def test_trim():
     sql, param_list = mm.select("testTrim", {'names': [1, 2, 3, 4]})
     assert sql == "SELECT name, category, price FROM fruits WHERE category = 'apple' OR price = 200 AND (type = 1 OR type= 0)"
 
+def test_trim2():
+    mm = MapperManager()
+    mm.read_mapper_xml_file("mapper/test.xml")
+
+    sql, param_list = mm.insert("testInsertSelective", {'name': 'Candy', 'category': "C", 'price': 500})
+    assert sql == "insert into fruits ( name, category, price ) values ( ?, ?, ? )"
+    assert len(param_list) == 3
+    assert param_list[0] == "Candy"
+    assert param_list[1] == 'C'
+    assert param_list[2] == 500
+
 def test_set():
     mm = MapperManager()
     mm.read_mapper_xml_file("mapper/test.xml")

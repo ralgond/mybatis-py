@@ -22,18 +22,53 @@ class MapperManager:
             self.id_2_element_map[child_id] = child
 
 
+    # @staticmethod
+    # def _trim_prefix(s : str, prefixes : Set[str]):
+    #     l = [term.strip() for term in s.split()]
+    #     idx = 0
+    #     for term in l:
+    #         if term in prefixes:
+    #             idx += 1
+    #             continue
+    #         else:
+    #             break
+    #
+    #     return " ".join(l[idx:])
+
     @staticmethod
-    def _trim_prefix(s : str, prefixes : Set[str]):
+    def _trim_prefix(s: str, prefixes: Set[str]):
+        p = [term[0] for term in sorted([(prefix, len(prefix)) for prefix in prefixes], key=lambda x: x[1], reverse=True)]
         l = [term.strip() for term in s.split()]
-        idx = 0
-        for term in l:
-            if term in prefixes:
-                idx += 1
-                continue
-            else:
+        s = " ".join(l)
+        while True:
+            to_break = True
+            for prefix in p:
+                if s.startswith(prefix):
+                    s = s[len(prefix):].strip()
+                    to_break = False
+                    break
+            if to_break:
                 break
 
-        return " ".join(l[idx:])
+        return s.strip()
+
+    @staticmethod
+    def _trim_suffix(s: str, suffixes: Set[str]):
+        suffixes = [term[0] for term in
+             sorted([(suffix, len(suffix)) for suffix in suffixes], key=lambda x: x[1], reverse=True)]
+        l = [term.strip() for term in s.split()]
+        s = " ".join(l)
+        while True:
+            to_break = True
+            for suffix in suffixes:
+                if s.endswith(suffix):
+                    s = s[:-1*len(suffix)].strip()
+                    to_break = False
+                    break
+            if to_break:
+                break
+
+        return s.strip()
 
     def parse_element(self, element : et.Element, param: dict) -> str:
         # print ("++++>", element)
@@ -86,9 +121,23 @@ class MapperManager:
             else:
                 return "WHERE " + ' '.join(l[idx:])
         elif element.tag == "trim":
-            prefix = element.attrib['prefix']
-            prefix_overrides_set = set()
-            [prefix_overrides_set.add(term.strip()) for term in element.attrib['prefixOverrides'].split("|")]
+            prefix = ""
+            if 'prefix' in element.attrib:
+                prefix = element.attrib['prefix']
+
+            suffix = ""
+            if 'suffix' in element.attrib:
+                suffix = element.attrib['suffix']
+
+            if 'prefixOverrides' in element.attrib:
+                prefix_overrides_set = set([term.strip() for term in element.attrib['prefixOverrides'].split("|")])
+            else:
+                prefix_overrides_set = set()
+
+            if 'suffixOverrides' in element.attrib:
+                suffix_overrides_set = set([term.strip() for term in element.attrib['suffixOverrides'].split("|")])
+            else:
+                suffix_overrides_set = set()
 
             ret = ""
             if element.text is not None:
@@ -97,8 +146,13 @@ class MapperManager:
                 ret += self.parse_element(child, param)
                 ret += child.tail
 
-            ret = MapperManager._trim_prefix(ret, prefix_overrides_set)
-            return prefix + " " + ret
+            if len(prefix_overrides_set) > 0:
+                ret = MapperManager._trim_prefix(ret, prefix_overrides_set)
+
+            if len(suffix_overrides_set) > 0:
+                ret = MapperManager._trim_suffix(ret, suffix_overrides_set)
+
+            return prefix + " " + ret + " " + suffix
 
         elif element.tag == "set":
             prefix_overrides_set = set()
