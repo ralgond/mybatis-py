@@ -1,8 +1,10 @@
+import time
+
 import pytest
 from mybatis import Cache, CacheKey
 
 def test_basic():
-    cache = Cache(memory_limit=555)  # 50MB
+    cache = Cache(memory_limit=555, max_live_ms=10*1000)  # 50MB, 10sec
     cache.put(CacheKey("a", [1, 'a', None]), [{"a1": 1}, {"a2": 2}])
     cache.put(CacheKey("b", [2, 'b', None]), "2")
     cache.put(CacheKey("c", [3, 'c', None]), "3")
@@ -42,3 +44,18 @@ def test_basic():
 
     assert l[2][0] == '{"sql": "d", "param_list": [4, "d", null]}'
     assert l[2][1] == None
+
+def test_timeout():
+    cache = Cache(memory_limit=555, max_live_ms=1 * 1000)  # 50MB, 10sec
+    cache.put(CacheKey("a", [1, 'a', None]), [{"a1": 1}, {"a2": 2}])
+    cache.put(CacheKey("b", [2, 'b', None]), "2")
+    cache.put(CacheKey("c", [3, 'c', None]), "3")
+    cache.put(CacheKey("d", [4, 'd', None]), None)
+
+    time.sleep(2)
+    assert cache.get(CacheKey("a", [1, 'a', None])) == None
+    assert cache.get(CacheKey("b", [2, 'b', None])) == None
+    assert cache.get(CacheKey("c", [3, 'c', None])) == None
+    assert cache.get(CacheKey("d", [4, 'd', None])) == None
+
+    assert cache.memory_used == 0

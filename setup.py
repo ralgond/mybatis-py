@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mybatis',
-    version='0.0.6',
+    version='0.0.7',
     description='A python ORM like mybatis.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',  # 如果你使用的是Markdown格式的README

@@ -1,5 +1,6 @@
 import json
 import pickle
+import time
 from typing import Dict, Any, Optional
 
 from pympler import asizeof
@@ -9,18 +10,11 @@ class CacheKey(object):
         self.sql = sql
         self.param_list = param_list
 
-    def __hash__(self):
-        return hash((self.sql, self.param_list))
-
-    def __eq__(self, other):
-        if not isinstance(other, CacheKey):
-            return False
-        return self.sql == other.sql and self.param_list == other.param_list
-
 class Cache(object):
-    def __init__(self, memory_limit:int):
+    def __init__(self, memory_limit:int, max_live_ms:int):
         self.memory_limit = memory_limit
         self.memory_used = 0
+        self.max_live_ms = max_live_ms
         self.table : Dict[str, CacheNode] = {}
         self.list = CacheList()
 
@@ -69,7 +63,15 @@ class Cache(object):
         key = json.dumps(raw_key.__dict__)
         if key not in self.table:
             return None
+
         node = self.table[key]
+        current_time_ms = int(time.time() * 1000)
+        if current_time_ms - node.timestamp > self.max_live_ms:
+            del self.table[node.key]
+            self.list.remove(node)
+            self.memory_used -= node.memory_usage
+            return None
+
         self.list.move_to_head(node)
         return json.loads(node.value)
 
@@ -89,6 +91,7 @@ class CacheNode:
         self.memory_usage = asizeof.asizeof(key) + asizeof.asizeof(value)
         self.key = key
         self.value = value
+        self.timestamp = int(time.time() * 1000)
 
 class CacheList:
     def __init__(self):

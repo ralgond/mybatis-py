@@ -6,14 +6,14 @@ from .cache import Cache, CacheKey
 import os
 
 class Mybatis(object):
-    def __init__(self, conn, mapper_path:str, cache_memory_limit:Optional[int]=None):
+    def __init__(self, conn, mapper_path:str, cache_memory_limit:Optional[int]=None, cache_max_live_ms:int=5*1000):
         self.conn = conn
         self.mapper_manager = MapperManager()
 
         if cache_memory_limit is not None:
-            self.cache = Cache(cache_memory_limit)
+            self.cache = Cache(cache_memory_limit, cache_max_live_ms)
         else:
-            self.cache = Cache(0)
+            self.cache = Cache(0, cache_max_live_ms)
 
         mapper_file_name_l = [name for name in os.listdir(mapper_path) if name.endswith(".xml")]
         for file_name in mapper_file_name_l:
