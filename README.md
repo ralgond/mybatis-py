@@ -1,4 +1,5 @@
 # mybatis-py
+[![Latest Version](https://img.shields.io/pypi/v/mybatis.svg)](https://pypi.org/project/mybatis/)
 [![codecov](https://codecov.io/gh/ralgond/mybatis-py/branch/main/graph/badge.svg)](https://codecov.io/gh/ralgond/mybatis-py)
 
 
