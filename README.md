@@ -118,4 +118,4 @@ def main():
     mb2 = Mybatis(conn2, "mapper", cache_memory_limit=None) # Disable caching
 ```
 ### Timeout mechanism
-In order to prevent users from always getting old data, the cache will determine whether the key-value has expired when fetching a key-value. The maximum life milliseconds of the key-value can be specified through the max_live_ms parameter in the constructor of the Mybatis class.
+In order to prevent users from always getting old data, the cache will determine whether the key-value has expired when fetching a key-value. The maximum life milliseconds of the key-value can be specified through the ```cache_max_live_ms``` parameter in the constructor of the Mybatis class.
