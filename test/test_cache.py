@@ -59,3 +59,19 @@ def test_timeout():
     assert cache.get(CacheKey("d", [4, 'd', None])) == None
 
     assert cache.memory_used == 0
+
+def test_overwrite():
+    cache = Cache(memory_limit=180, max_live_ms=10 * 1000)  # 50MB, 10sec
+    cache.put(CacheKey("a", [1, 'a', None]), [{"a1": 1}, {"a2": 2}])
+    #print ("++++>cache.memory_used:", cache.memory_used)
+    cache.put(CacheKey("a", [1, 'a', None]), [{"a1": 1}, {"a2": 2}, {"a3":3}])
+    #print("++++>cache.memory_used:", cache.memory_used)
+    assert cache.get(CacheKey("a", [1, 'a', None])) == None
+    assert cache.memory_used == 0
+
+    cache = Cache(memory_limit=2000, max_live_ms=10 * 1000)  # 50MB, 10sec
+    cache.put(CacheKey("a", [1, 'a', None]), [{"a1": 1}, {"a2": 2}])
+    cache.put(CacheKey("a", [1, 'a', None]), [{"a1": 1}, {"a2": 2}, {"a3": 3}])
+    assert cache.get(CacheKey("a", [1, 'a', None])) != None
+
+    #print("====>", cache.memory_used)

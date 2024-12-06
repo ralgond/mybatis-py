@@ -33,8 +33,13 @@ class Cache(object):
     def put(self, raw_key:CacheKey, value: Any):
         key = json.dumps(raw_key.__dict__)
         if key in self.table:
-            self.memory_used -= self.table[key].memory_usage
             node = self.table[key]
+            del self.table[key]
+            self.list.remove(node)
+            self.memory_used -= node.memory_usage
+            node.value = json.dumps(value)
+            node.memory_usage = asizeof.asizeof(node.key) + asizeof.asizeof(node.value)
+            # print("++++>", node.memory_usage)
         else:
             node = CacheNode(key, json.dumps(value))
             node.memory_usage = asizeof.asizeof(node.key) + asizeof.asizeof(node.value)
@@ -73,6 +78,7 @@ class Cache(object):
             return None
 
         self.list.move_to_head(node)
+        # print ("====>", node.value, type(node.value))
         return json.loads(node.value)
 
     # def dump(self):
