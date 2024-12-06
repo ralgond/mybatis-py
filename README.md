@@ -237,8 +237,10 @@ def hello():
         # ret = mb.select_one("testBasic1", {'id':1})
         ret = select_one(id=2)
         return json.dumps(ret)
-    except Exception as e:
+    except mysql.connector.errors.Error as e:
         connection_error = True
+        return str(e), 500
+    except Exception as e:
         return str(e), 500
 
 if __name__ == "__main__":
