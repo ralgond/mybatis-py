@@ -4,11 +4,30 @@ from .mapper_manager import MapperManager
 from .cache import Cache, CacheKey
 
 import os
+from pympler import asizeof
+
+def fetch_rows(cursor, batch_size=1000):
+    while True:
+        rows = cursor.fetchmany(batch_size)
+        if not rows:
+            break
+        column_name = [item[0] for item in cursor.description]
+        res_list = []
+        for row in rows:
+            d = {}
+            for idx, item in enumerate(column_name):
+                d[item] = row[idx]
+            res_list.append(d)
+
+        for ret in res_list:
+            yield ret
 
 class Mybatis(object):
-    def __init__(self, conn, mapper_path:str, cache_memory_limit:Optional[int]=None, cache_max_live_ms:int=5*1000):
+    def __init__(self, conn, mapper_path:str, cache_memory_limit:Optional[int]=None, cache_max_live_ms:int=5*1000,
+                 max_result_bytes:int=100*1024*1024):
         self.conn = conn
         self.mapper_manager = MapperManager()
+        self.max_result_bytes = max_result_bytes
 
         if cache_memory_limit is not None:
             self.cache = Cache(cache_memory_limit, cache_max_live_ms)
@@ -50,16 +69,15 @@ class Mybatis(object):
 
         with self.conn.cursor(prepared=True) as cursor:
             cursor.execute(sql, param_list)
-            ret = cursor.fetchall()
-            if ret is None:
-                return None
-            column_name = [item[0] for item in cursor.description]
+            # ret = cursor.fetchall()
+            ret = None
             res_list = []
-            for row in ret:
-                d = {}
-                for idx, item in enumerate(column_name):
-                    d[item] = row[idx]
-                res_list.append(d)
+            memory_used = 0
+            for item in fetch_rows(cursor, batch_size=1000):
+                memory_used += asizeof.asizeof(item)
+                if memory_used > self.max_result_bytes:
+                    raise Exception("memory limit exceeded")
+                res_list.append(item)
 
             if len(res_list) == 0:
                 res_list = None
@@ -167,18 +185,17 @@ class Mybatis(object):
                     if res is not None:
                         return res
 
+                memory_used = 0
                 with self.conn.cursor(prepared=True) as cursor:
                     cursor.execute(sql, param_list)
-
+                    # ret = cursor.fetchall()
+                    ret = None
                     res_list = []
-                    column_name = [item[0] for item in cursor.description]
-
-                    ret = cursor.fetchall()
-                    for row in ret:
-                        d = {}
-                        for idx, item in enumerate(column_name):
-                            d[item] = row[idx]
-                        res_list.append(d)
+                    for item in fetch_rows(cursor, batch_size=1000):
+                        memory_used += asizeof.asizeof(item)
+                        if memory_used > self.max_result_bytes:
+                            raise Exception("memory limit exceeded")
+                        res_list.append(item)
 
                     if len(res_list) == 0:
                         res_list = None
