@@ -87,15 +87,15 @@ def get_many():
     pass
 
 @mb.Insert("INSERT INTO fruits (name, category, price) VALUES (#{name}, #{category}, #{price})")
-def insert():
+def insert(name:str, category:str, price:int):
     pass
 
 @mb.Delete("DELETE FROM fruits WHERE id=#{id}")
 def delete(id:int):
     pass
 
-@mb.Update("UPDATE fruits SET name='Amazon' WHERE id=#{id}")
-def update(id:int):
+@mb.Update("UPDATE fruits SET name=#{name} WHERE id=#{id}")
+def update(name:str, id:int):
     pass
 
 print(get_one(id=1))
@@ -108,7 +108,7 @@ print(insert(name="Dating", category="D", price=20))
 
 print(get_many())
 
-print(update(id=1))
+print(update(name='Amazon', id=1))
 
 print(get_many())
 ```
