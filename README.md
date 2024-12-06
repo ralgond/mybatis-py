@@ -8,7 +8,7 @@ A python ORM like mybatis.
 ## How to Use
 
 ### Install 
-pip install mybatis
+pip install -U mybatis
 
 ### Create Database
 ```sql
