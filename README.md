@@ -169,3 +169,79 @@ def main():
 ```
 ### Timeout mechanism
 In order to prevent users from always getting old data, the cache will determine whether the key-value has expired when fetching a key-value. The maximum life milliseconds of the key-value can be specified through the ```cache_max_live_ms``` parameter in the constructor of the Mybatis class.
+
+## Use in Flask
+### Auto Reconnecting
+```python
+from flask import Flask
+import mysql.connector
+from mybatis import Mybatis
+import json
+
+app = Flask(__name__)
+
+conn = None
+mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024)
+connection_error = False
+error_string = ""
+
+def make_connection_and_mybatis():
+    global conn
+    global mb
+    global connection_error
+    global error_string
+
+    if conn is None:
+        try:
+            conn = mysql.connector.connect(
+                            host="localhost",  # MySQL 主机地址
+                            user="mybatis",  # MySQL 用户名
+                            password="mybatis",  # MySQL 密码
+                            database="mybatis"  # 需要连接的数据库
+            )
+            mb.conn = conn
+                
+            return True
+            
+        except Exception as e:
+            connection_error = True
+            error_string = str(e)
+            return False
+    else:
+        try:
+            if connection_error:
+                conn.reconnect(3, 3)
+                connection_error = False
+
+            if mb.conn is None:
+                mb.conn = conn
+            return True
+        except Exception as e:
+            connection_error = True
+            error_string = str(e)
+            return False
+
+
+@mb.SelectOne("SELECT * FROM fruits WHERE id=#{id}")
+def select_one(id:int):
+    pass
+
+@app.route('/')
+def hello():
+    global connection_error
+    try:
+        ret = make_connection_and_mybatis()
+        if ret is False:
+            return error_string, 500
+
+        # ret = mb.select_one("testBasic1", {'id':1})
+        ret = select_one(id=2)
+        return json.dumps(ret)
+    except Exception as e:
+        connection_error = True
+        return str(e), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+```
