@@ -63,6 +63,56 @@ if __name__ == "__main__":
     main()
 ```
 
+## Decorator
+The example is as follows:
+```python
+import mysql.connector
+from mybatis import Mybatis
+
+conn = mysql.connector.connect(
+    host="localhost",
+    user="mybatis",
+    password="mybatis",
+    database="mybatis"
+)
+
+mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024)
+
+@mb.SelectOne("SELECT * FROM fruits WHERE id=#{id}")
+def get_one(id:int):
+    pass
+
+@mb.SelectMany("SELECT * FROM fruits")
+def get_many():
+    pass
+
+@mb.Insert("INSERT INTO fruits (name, category, price) VALUES (#{name}, #{category}, #{price})")
+def insert():
+    pass
+
+@mb.Delete("DELETE FROM fruits WHERE id=#{id}")
+def delete(id:int):
+    pass
+
+@mb.Update("UPDATE fruits SET name='Amazon' WHERE id=#{id}")
+def update(id:int):
+    pass
+
+print(get_one(id=1))
+
+print(delete(id=4))
+
+print(get_many())
+
+print(insert(name="Dating", category="D", price=20))
+
+print(get_many())
+
+print(update(id=1))
+
+print(get_many())
+```
+
 ## Dynamic SQL
 ### The difference between ${} and #{} 
 #{} is a placeholder that exists for prepared statement and will become the character '?' after processing by MapperManager.
