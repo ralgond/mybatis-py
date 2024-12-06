@@ -61,8 +61,12 @@ class Mybatis(object):
                     d[item] = row[idx]
                 res_list.append(d)
 
+            if len(res_list) == 0:
+                res_list = None
+
             if self.cache is not None:
                 self.cache.put(CacheKey(sql, param_list), res_list)
+
             return res_list
 
     def update(self, id:str, params:dict) -> int:
@@ -112,3 +116,138 @@ class Mybatis(object):
             self.conn.commit()
             last_id = cursor.lastrowid
             return last_id
+
+
+    def SelectOne(self, unparsed_sql:str) -> Optional[Dict]:
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                params = {}
+                for key, value in kwargs.items():
+                    params[key] = value
+
+                sql, param_list = self.mapper_manager._to_prepared_statement(unparsed_sql, params)
+                sql = self.mapper_manager._to_replace(sql, params)
+
+                if self.cache is not None:
+                    res = self.cache.get(CacheKey(sql, param_list))
+                    if res is not None:
+                        return res
+
+                with self.conn.cursor(prepared=True) as cursor:
+                    cursor.execute(sql, param_list)
+                    ret = cursor.fetchone()
+                    if ret is None:
+                        return None
+
+                    column_name = [item[0] for item in cursor.description]
+                    res = {}
+                    for idx, item in enumerate(column_name):
+                        res[item] = ret[idx]
+
+                    if self.cache is not None:
+                        self.cache.put(CacheKey(sql, param_list), res)
+
+                    return res
+
+            return wrapper
+        return decorator
+
+    def SelectMany(self, unparsed_sql:str) -> Optional[List[Dict]]:
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                params = {}
+                for key, value in kwargs.items():
+                    params[key] = value
+
+                sql, param_list = self.mapper_manager._to_prepared_statement(unparsed_sql, params)
+                sql = self.mapper_manager._to_replace(sql, params)
+
+                if self.cache is not None:
+                    res = self.cache.get(CacheKey(sql, param_list))
+                    if res is not None:
+                        return res
+
+                with self.conn.cursor(prepared=True) as cursor:
+                    cursor.execute(sql, param_list)
+
+                    res_list = []
+                    column_name = [item[0] for item in cursor.description]
+
+                    ret = cursor.fetchall()
+                    for row in ret:
+                        d = {}
+                        for idx, item in enumerate(column_name):
+                            d[item] = row[idx]
+                        res_list.append(d)
+
+                    if len(res_list) == 0:
+                        res_list = None
+
+                    if self.cache is not None:
+                        self.cache.put(CacheKey(sql, param_list), res_list)
+
+                    return res_list
+            return wrapper
+        return decorator
+
+    def Insert(self, unparsed_sql:str) -> int:
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                params = {}
+                for key, value in kwargs.items():
+                    params[key] = value
+
+                sql, param_list = self.mapper_manager._to_prepared_statement(unparsed_sql, params)
+                sql = self.mapper_manager._to_replace(sql, params)
+
+                res = self.cache.clear()
+
+                with self.conn.cursor(prepared=True) as cursor:
+                    cursor.execute(sql, param_list)
+                    self.conn.commit()
+                    last_id = cursor.lastrowid
+                    return last_id
+            return wrapper
+        return decorator
+
+    def Delete(self, unparsed_sql:str) -> int:
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                params = {}
+                for key, value in kwargs.items():
+                    params[key] = value
+
+                sql, param_list = self.mapper_manager._to_prepared_statement(unparsed_sql, params)
+                sql = self.mapper_manager._to_replace(sql, params)
+
+                res = self.cache.clear()
+
+                with self.conn.cursor(prepared=True) as cursor:
+                    cursor.execute(sql, param_list)
+                    affected_rows = cursor.rowcount
+                    self.conn.commit()
+                    return affected_rows
+            return wrapper
+        return decorator
+
+    def Update(self, unparsed_sql:str) -> int:
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                params = {}
+                for key, value in kwargs.items():
+                    params[key] = value
+
+                sql, param_list = self.mapper_manager._to_prepared_statement(unparsed_sql, params)
+                sql = self.mapper_manager._to_replace(sql, params)
+
+                res = self.cache.clear()
+
+                with self.conn.cursor(prepared=True) as cursor:
+                    cursor.execute(sql, param_list)
+                    affected_rows = cursor.rowcount
+                    self.conn.commit()
+                    return affected_rows
+
+            return wrapper
+
+        return decorator
