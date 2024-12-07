@@ -180,6 +180,8 @@ import json
 
 app = Flask(__name__)
 
+
+# 连接到 MySQL 数据库
 conn = None
 mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024)
 connection_error = False
@@ -226,24 +228,36 @@ def make_connection_and_mybatis():
 def select_one(id:int):
     pass
 
-@app.route('/')
-def hello():
-    global connection_error
-    try:
-        ret = make_connection_and_mybatis()
-        if ret is False:
-            return error_string, 500
+@mb.SelectMany("SELECT * FROM fruits")
+def select_many():
+    pass
 
-        # ret = mb.select_one("testBasic1", {'id':1})
-        ret = select_one(id=2)
-        return json.dumps(ret)
-    except mysql.connector.errors.Error as e:
-        connection_error = True
-        return str(e), 500
-    except Exception as e:
-        return str(e), 500
+def mysql_auto_reconnect(func):
+    def wrapper(*args, **kwargs):
+        global connection_error
+        try:
+            ret = make_connection_and_mybatis()
+            if ret is False:
+                return error_string, 500
+
+
+            ret = func(*args, **kwargs)
+            return ret, 200
+
+        except mysql.connector.errors.Error as e:
+            connection_error = True
+            return str(e), 500
+        except Exception as e:
+            return str(e), 500
+    return wrapper
+
+
+@app.route('/')
+@mysql_auto_reconnect
+def hello():
+    ret = select_many()
+    return json.dumps(ret)
 
 if __name__ == "__main__":
     app.run(debug=True)
-
 ```
