@@ -271,6 +271,4 @@ def hello():
 def do_insert():
     ret = insert()
     return json.dumps(ret)
-
-if __
 ```
