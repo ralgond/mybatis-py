@@ -12,7 +12,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'mysql-connector-python>=9.0.0',
-        'Pympler>=1.1'
+        'Pympler>=1.1',
+        'recordclass>=0.22.1'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
