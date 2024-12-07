@@ -11,8 +11,10 @@ def db_connection():
         host="localhost",
         user="mybatis",
         password="mybatis",
-        database="mybatis"
+        database="mybatis",
+        autocommit=False,
     )
+    connection.start_transaction()
     cursor = connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS fruits")
     create_table_sql = '''CREATE TABLE IF NOT EXISTS fruits (
@@ -26,6 +28,7 @@ def db_connection():
     cursor.execute("INSERT INTO fruits (name, category, price) VALUES ('Alice', 'A', 100)")
     cursor.execute("INSERT INTO fruits (name, category, price) VALUES ('Bob', 'B', 200)")
     connection.commit()
+    cursor.close()
 
     # 提供数据库连接给测试用例
     yield connection

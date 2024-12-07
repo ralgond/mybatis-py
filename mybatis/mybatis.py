@@ -1,5 +1,7 @@
 from typing import Optional, Dict, List
 
+import mysql.connector.errors
+
 from .mapper_manager import MapperManager
 from .cache import Cache, CacheKey
 
@@ -98,10 +100,14 @@ class Mybatis(object):
         res = self.cache.clear()
 
         with self.conn.cursor(prepared=True) as cursor:
-            cursor.execute(sql, param_list)
-            affected_rows = cursor.rowcount
-            self.conn.commit()
-            return affected_rows
+            try:
+                cursor.execute(sql, param_list)
+                affected_rows = cursor.rowcount
+                self.conn.commit()
+                return affected_rows
+            except mysql.connector.errors.Error as e:
+                self.conn.rollback()
+                raise e
 
     def delete(self, id:str, params:dict) -> int:
         '''
@@ -114,10 +120,14 @@ class Mybatis(object):
         res = self.cache.clear()
 
         with self.conn.cursor(prepared=True) as cursor:
-            cursor.execute(sql, param_list)
-            affected_rows = cursor.rowcount
-            self.conn.commit()
-            return affected_rows
+            try:
+                cursor.execute(sql, param_list)
+                affected_rows = cursor.rowcount
+                self.conn.commit()
+                return affected_rows
+            except mysql.connector.errors.Error as e:
+                self.conn.rollback()
+                raise e
 
     def insert(self, id:str, params:dict) -> int:
         '''
@@ -130,10 +140,14 @@ class Mybatis(object):
         res = self.cache.clear()
 
         with self.conn.cursor(prepared=True) as cursor:
-            cursor.execute(sql, param_list)
-            self.conn.commit()
-            last_id = cursor.lastrowid
-            return last_id
+            try:
+                cursor.execute(sql, param_list)
+                self.conn.commit()
+                last_id = cursor.lastrowid
+                return last_id
+            except mysql.connector.errors.Error as e:
+                self.conn.rollback()
+                raise e
 
 
     def SelectOne(self, unparsed_sql:str) -> Optional[Dict]:
@@ -220,10 +234,14 @@ class Mybatis(object):
                 res = self.cache.clear()
 
                 with self.conn.cursor(prepared=True) as cursor:
-                    cursor.execute(sql, param_list)
-                    self.conn.commit()
-                    last_id = cursor.lastrowid
-                    return last_id
+                    try:
+                        cursor.execute(sql, param_list)
+                        self.conn.commit()
+                        last_id = cursor.lastrowid
+                        return last_id
+                    except mysql.connector.errors.Error as e:
+                        self.conn.rollback()
+                        raise e
             return wrapper
         return decorator
 
@@ -240,10 +258,15 @@ class Mybatis(object):
                 res = self.cache.clear()
 
                 with self.conn.cursor(prepared=True) as cursor:
-                    cursor.execute(sql, param_list)
-                    affected_rows = cursor.rowcount
-                    self.conn.commit()
-                    return affected_rows
+                    try:
+                        cursor.execute(sql, param_list)
+                        affected_rows = cursor.rowcount
+                        self.conn.commit()
+                        return affected_rows
+                    except mysql.connector.errors.Error as e:
+                        self.conn.rollback()
+                        raise e
+
             return wrapper
         return decorator
 
@@ -260,10 +283,14 @@ class Mybatis(object):
                 res = self.cache.clear()
 
                 with self.conn.cursor(prepared=True) as cursor:
-                    cursor.execute(sql, param_list)
-                    affected_rows = cursor.rowcount
-                    self.conn.commit()
-                    return affected_rows
+                    try:
+                        cursor.execute(sql, param_list)
+                        affected_rows = cursor.rowcount
+                        self.conn.commit()
+                        return affected_rows
+                    except mysql.connector.errors.Error as e:
+                        self.conn.rollback()
+                        raise e
 
             return wrapper
 

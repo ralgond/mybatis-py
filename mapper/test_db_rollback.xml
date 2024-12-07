@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper>
+    <insert id="testDBRollbackInsert">
+        INSERT INTO fruits2 (name, category, price) VALUES ('Candy', 'B', 500)
+    </insert>
+    <delete id="testDBRollbackDelete">
+        DELETE FROM fruits2 WHERE id=1
+    </delete>
+    <update id="testDBRollbackUpdate">
+        UPDATE fruits2 SET name='Candy' WHERE id=1
+    </update>
+</mapper>

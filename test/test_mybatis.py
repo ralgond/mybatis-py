@@ -11,8 +11,10 @@ def db_connection():
         host="localhost",
         user="mybatis",
         password="mybatis",
-        database="mybatis"
+        database="mybatis",
+        autocommit=False,
     )
+    connection.start_transaction()
     cursor = connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS fruits")
     create_table_sql = '''CREATE TABLE IF NOT EXISTS fruits (

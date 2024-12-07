@@ -6,6 +6,7 @@ conn = mysql.connector.connect(
     user="mybatis",  # MySQL 用户名
     password="mybatis",  # MySQL 密码
     database="mybatis",  # 需要连接的数据库,
+    autocommit=False
 )
 
 mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024)
