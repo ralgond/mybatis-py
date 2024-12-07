@@ -196,10 +196,11 @@ def make_connection_and_mybatis():
     if conn is None:
         try:
             conn = mysql.connector.connect(
-                            host="localhost",  # MySQL 主机地址
-                            user="mybatis",  # MySQL 用户名
-                            password="mybatis",  # MySQL 密码
-                            database="mybatis"  # 需要连接的数据库
+                            host="localhost",
+                            user="mybatis",  
+                            password="mybatis", 
+                            database="mybatis",
+                            autocommit=False
             )
             mb.conn = conn
                 
@@ -232,6 +233,10 @@ def select_one(id:int):
 def select_many():
     pass
 
+@mb.Insert("INSERT INTO fruits (name,category,price) VALUES ('Candy', 'C', 500)")
+def insert():
+    pass
+
 def mysql_auto_reconnect(func):
     def wrapper(*args, **kwargs):
         global connection_error
@@ -239,7 +244,6 @@ def mysql_auto_reconnect(func):
             ret = make_connection_and_mybatis()
             if ret is False:
                 return error_string, 500
-
 
             ret = func(*args, **kwargs)
             return ret, 200
@@ -249,6 +253,10 @@ def mysql_auto_reconnect(func):
             return str(e), 500
         except Exception as e:
             return str(e), 500
+
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+
     return wrapper
 
 
@@ -256,6 +264,13 @@ def mysql_auto_reconnect(func):
 @mysql_auto_reconnect
 def hello():
     ret = select_many()
+    return json.dumps(ret)
+
+
+@app.route('/insert')
+@mysql_auto_reconnect
+def do_insert():
+    ret = insert()
     return json.dumps(ret)
 
 if __name__ == "__main__":
