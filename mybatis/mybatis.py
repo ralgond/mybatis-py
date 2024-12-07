@@ -43,7 +43,7 @@ class Mybatis(object):
 
     def select_one(self, id:str, params:dict) -> Optional[Dict]:
         sql, param_list = self.mapper_manager.select(id, params)
-        if self.cache is not None:
+        if self.cache.memory_limit > 0:
             res = self.cache.get(CacheKey(sql, param_list))
             if res is not None:
                 return res
@@ -58,13 +58,13 @@ class Mybatis(object):
             for idx, item in enumerate(column_name):
                 res[item] = ret[idx]
 
-            if self.cache is not None:
+            if self.cache.memory_limit > 0:
                 self.cache.put(CacheKey(sql, param_list), res)
             return res
 
     def select_many(self, id:str, params:dict) -> Optional[List[Dict]]:
         sql, param_list = self.mapper_manager.select(id, params)
-        if self.cache is not None:
+        if self.cache.memory_limit > 0:
             res = self.cache.get(CacheKey(sql, param_list))
             if res is not None:
                 return res
@@ -84,7 +84,7 @@ class Mybatis(object):
             if len(res_list) == 0:
                 res_list = None
 
-            if self.cache is not None:
+            if self.cache.memory_limit > 0:
                 self.cache.put(CacheKey(sql, param_list), res_list)
 
             return res_list
@@ -160,7 +160,7 @@ class Mybatis(object):
                 sql, param_list = self.mapper_manager._to_prepared_statement(unparsed_sql, params)
                 sql = self.mapper_manager._to_replace(sql, params)
 
-                if self.cache is not None:
+                if self.cache.memory_limit > 0:
                     res = self.cache.get(CacheKey(sql, param_list))
                     if res is not None:
                         return res
@@ -176,7 +176,7 @@ class Mybatis(object):
                     for idx, item in enumerate(column_name):
                         res[item] = ret[idx]
 
-                    if self.cache is not None:
+                    if self.cache.memory_limit > 0:
                         self.cache.put(CacheKey(sql, param_list), res)
 
                     return res
@@ -194,7 +194,7 @@ class Mybatis(object):
                 sql, param_list = self.mapper_manager._to_prepared_statement(unparsed_sql, params)
                 sql = self.mapper_manager._to_replace(sql, params)
 
-                if self.cache is not None:
+                if self.cache.memory_limit > 0:
                     res = self.cache.get(CacheKey(sql, param_list))
                     if res is not None:
                         return res
@@ -214,7 +214,7 @@ class Mybatis(object):
                     if len(res_list) == 0:
                         res_list = None
 
-                    if self.cache is not None:
+                    if self.cache.memory_limit > 0:
                         self.cache.put(CacheKey(sql, param_list), res_list)
 
                     return res_list
