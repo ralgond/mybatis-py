@@ -43,8 +43,6 @@ class Cache(object):
             node = CacheNode(key, json.dumps(value))
             node.memory_usage = asizeof.asizeof(node.key) + asizeof.asizeof(node.value)
 
-        # print("====>", node.memory_usage)
-
         while self.memory_used + node.memory_usage >= self.memory_limit:
             to_remove_node = self.list.tail.prev
             if to_remove_node is not self.list.head:
@@ -57,7 +55,8 @@ class Cache(object):
         if self.memory_used + node.memory_usage > self.memory_limit:
             return
 
-        self.table[key] = node
+        node.timestamp = int(time.time() * 1000)
+        self.table[node.key] = node
 
         self.list.move_to_head(node)
 
@@ -70,8 +69,9 @@ class Cache(object):
 
         node = self.table[key]
         current_time_ms = int(time.time() * 1000)
+        # print("delta:",current_time_ms - node.timestamp, "self.max_live_ms:", self.max_live_ms)
         if current_time_ms - node.timestamp > self.max_live_ms:
-            del self.table[node.key]
+            del self.table[key]
             self.list.remove(node)
             self.memory_used -= node.memory_usage
             return None
