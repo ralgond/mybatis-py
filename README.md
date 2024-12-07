@@ -177,6 +177,7 @@ from flask import Flask
 import mysql.connector
 from mybatis import Mybatis
 import json
+import functools
 
 app = Flask(__name__)
 
@@ -238,6 +239,7 @@ def insert():
     pass
 
 def mysql_auto_reconnect(func):
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         global connection_error
         try:
@@ -253,9 +255,6 @@ def mysql_auto_reconnect(func):
             return str(e), 500
         except Exception as e:
             return str(e), 500
-
-    wrapper.__name__ = func.__name__
-    wrapper.__doc__ = func.__doc__
 
     return wrapper
 
@@ -273,6 +272,5 @@ def do_insert():
     ret = insert()
     return json.dumps(ret)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+if __
 ```
