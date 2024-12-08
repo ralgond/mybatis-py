@@ -114,6 +114,35 @@ print(get_many())
 ```
 
 ## Dynamic SQL
+
+### Namespace
+Create xml mapper as follows:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="test_namespace">
+    <insert id="testInsert">
+        INSERT INTO fruits (name, category, price) VALUES (#{name},#{category},#{price})
+    </insert>
+    <delete id="testDelete">
+        DELETE FROM fruits WHERE id=#{id}
+    </delete>
+    <update id="testUpdate">
+        UPDATE fruits SET name=#{name} WHERE id=#{id}
+    </update>
+</mapper>
+```
+Write python code as follows:
+```python
+from mybatis import MapperManager
+
+mm = MapperManager()
+mm.read_mapper_xml_file("mapper/test_namespace.xml")
+
+sql, param_list = mm.insert("test_namespace.testInsert", {'name': 'Alice', 'category': 'A', 'price': 100})
+assert sql == "INSERT INTO fruits (name, category, price) VALUES (?,?,?)"
+```
+
 ### The difference between ${} and #{} 
 #{} is a placeholder that exists for prepared statement and will become the character '?' after processing by MapperManager.
 ${} represents simple string replacement. The following example illustrates the difference:
@@ -149,20 +178,23 @@ Based on security considerations, in order to prevent SQL injection, it is recom
 ## Cache
 mybatis-py maintains a cache pool for each connection. The elimination strategy is LRU. You can define the maximum byte capacity of the pool. If you do not want to use cache, you can set the parameter configuration. The code is as follows:
 ```python
-def main():
-    # conn1 = mysql.connector.connect(
-    #     host="localhost",
-    #     user="mybatis",
-    #     password="mybatis",
-    #     database="mybatis"
-    # )
+from mybatis import *
+import mysql.connector
 
-    # conn2 = mysql.connector.connect(
-    #     host="localhost",
-    #     user="mybatis",
-    #     password="mybatis",
-    #     database="mybatis"
-    # )
+def main():
+    conn1 = mysql.connector.connect(
+        host="localhost",
+        user="mybatis",
+        password="mybatis",
+        database="mybatis"
+    )
+
+    conn2 = mysql.connector.connect(
+        host="localhost",
+        user="mybatis",
+        password="mybatis",
+        database="mybatis"
+    )
 
     mb1 = Mybatis(conn1, "mapper", cache_memory_limit=50*1024*1024) # Capacity limit is 50MB
     mb2 = Mybatis(conn2, "mapper", cache_memory_limit=None) # Disable caching
