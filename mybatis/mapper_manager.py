@@ -9,9 +9,12 @@ class MapperManager:
         self.replace_pattern = re.compile(r"\${([a-zA-Z0-9_\-]+)}")
 
     def read_mapper_xml_file(self, mapper_xml_file_path):
+        namespace = ""
         root = et.parse(mapper_xml_file_path).getroot()
         for child in root.iter():
             if child.tag == 'mapper':
+                if "namespace" in child.attrib:
+                    namespace = child.attrib["namespace"]
                 root = child
                 break
 
@@ -19,7 +22,10 @@ class MapperManager:
             child_id = child.attrib["id"]
             if child_id is None:
                 raise Exception("Missing id")
-            self.id_2_element_map[child_id] = child
+            if namespace == "":
+                self.id_2_element_map[child_id] = child
+            else:
+                self.id_2_element_map[namespace+"."+child_id] = child
 
 
     # @staticmethod
