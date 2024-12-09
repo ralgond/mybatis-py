@@ -39,46 +39,6 @@ INSERT INTO fruits (name, category, price) VALUES ('Alice', 'A', 100);
 INSERT INTO fruits (name, category, price) VALUES ('Bob', 'B', 200);
 ```
 
-### Write Code
-
-refer to [test_mybatis.py](https://github.com/ralgond/mybatis-py/blob/main/test/test_mybatis.py)、[test2.xml](https://github.com/ralgond/mybatis-py/blob/main/mapper/test.xml)
-
-Create a mapper directory, and create a file named mapper/test.xml, as follows:
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper>
-    <insert id="testInsert1">
-        INSERT INTO fruits (name, category, price) VALUES (#{name}, #{category}, #{price})
-    </insert>
-    <select id="testBasic1">
-        SELECT * from fruits where id=#{id}
-    </select>
-</mapper>
-```
-Create a Python file named "test.py" as follows:
-```python
-from mybatis import *
-
-def main():
-    conn = ConnectionFactory.get_connection(
-            dbms_name='mysql', # change to 'postgresql' if you are using PostgreSQL
-            host="localhost",
-            user="mybatis",
-            password="mybatis",
-            database="mybatis")
-
-    mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024)
-
-    ret = mb.insert('testInsert1', {'name':'Alice', 'category':'C', 'price':500})
-    ret = mb.select_one("testBasic1", {'id':1})
-
-    print(ret)
-
-if __name__ == "__main__":
-    main()
-```
-
 ## Decorator
 The example is as follows:
 ```python
@@ -129,6 +89,49 @@ print(get_many())
 ```
 
 ## Dynamic SQL
+
+### Write Code
+
+refer to [test_mybatis.py](https://github.com/ralgond/mybatis-py/blob/main/test/test_mybatis.py)、[test2.xml](https://github.com/ralgond/mybatis-py/blob/main/mapper/test.xml)
+
+Create a mapper directory, and create a file named mapper/test.xml, as follows:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper>
+    <insert id="testInsert1">
+        INSERT INTO fruits (name, category, price) VALUES (#{name}, #{category}, #{price})
+        <if test="'__need_returning_id__' in params">
+            RETURNING ${__need_returning_id__}
+        </if>
+    </insert>
+    <select id="testBasic1">
+        SELECT * from fruits where id=#{id}
+    </select>
+</mapper>
+```
+Create a Python file named "test.py" as follows:
+```python
+from mybatis import *
+
+def main():
+    conn = ConnectionFactory.get_connection(
+            dbms_name='mysql', # change to 'postgresql' if you are using PostgreSQL
+            host="localhost",
+            user="mybatis",
+            password="mybatis",
+            database="mybatis")
+
+    mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024)
+
+    ret = mb.insert('testInsert1', {'name':'Alice', 'category':'C', 'price':500})
+    ret = mb.select_one("testBasic1", {'id':1})
+
+    print(ret)
+
+if __name__ == "__main__":
+    main()
+```
 
 ### Namespace
 Create xml mapper as follows:
