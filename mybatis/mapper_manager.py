@@ -3,11 +3,10 @@ from typing import Tuple, Set
 import re
 
 class MapperManager:
-    def __init__(self, postgresql_primary_key_name=None):
+    def __init__(self):
         self.id_2_element_map = {}
         self.param_pattern = re.compile(r"#{([a-zA-Z0-9_\-]+)}")
         self.replace_pattern = re.compile(r"\${([a-zA-Z0-9_\-]+)}")
-        self.postgresql_primary_key_name = postgresql_primary_key_name
 
     def read_mapper_xml_file(self, mapper_xml_file_path):
         namespace = ""
@@ -340,7 +339,7 @@ class MapperManager:
         sql = self._to_replace(sql, params)
         return (sql, sql_param)
 
-    def insert(self, id: str, params: dict) -> Tuple[str, list]:
+    def insert(self, id: str, params: dict, primary_key:str=None) -> Tuple[str, list]:
         if id not in self.id_2_element_map:
             raise Exception("Missing id")
         element = self.id_2_element_map[id]
@@ -358,7 +357,7 @@ class MapperManager:
         sql, sql_param = self._to_prepared_statement(ret, params)
         sql = self._to_replace(sql, params)
 
-        if self.postgresql_primary_key_name:
-            sql += (" RETURNING "+str(self.postgresql_primary_key_name))
+        if primary_key:
+            sql += (" RETURNING "+str(primary_key))
 
         return (sql, sql_param)

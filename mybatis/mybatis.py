@@ -28,10 +28,9 @@ def fetch_rows(cursor, batch_size=1000):
 
 class Mybatis(object):
     def __init__(self, conn:AbstractConnection, mapper_path:str, cache_memory_limit:Optional[int]=None, cache_max_live_ms:int=5*1000,
-                 max_result_bytes:int=100*1024*1024, postgresql_primary_key_name=None):
+                 max_result_bytes:int=100*1024*1024):
         self.conn = conn
-        self.postgresql_primary_key_name = postgresql_primary_key_name
-        self.mapper_manager = MapperManager(postgresql_primary_key_name)
+        self.mapper_manager = MapperManager()
         self.max_result_bytes = max_result_bytes
 
         if cache_memory_limit is not None:
@@ -46,6 +45,7 @@ class Mybatis(object):
 
     def select_one(self, id:str, params:dict) -> Optional[Dict]:
         sql, param_list = self.mapper_manager.select(id, params)
+
         if self.cache.memory_limit > 0:
             res = self.cache.get(CacheKey(sql, param_list))
             if res is not None:
@@ -144,7 +144,9 @@ class Mybatis(object):
         if self.conn.need_returning_id() and primary_key:
             params['__need_returning_id__'] = str(primary_key)
 
-        sql, param_list = self.mapper_manager.insert(id, params)
+        sql, param_list = self.mapper_manager.insert(id, params, primary_key)
+
+        print("========>",sql,param_list)
 
         res = self.cache.clear()
 

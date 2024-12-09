@@ -6,14 +6,6 @@ from mybatis import ConnectionFactory
 
 @pytest.fixture(scope="function")
 def db_connection():
-    # 配置数据库连接
-    # connection = mysql.connector.connect(
-    #     host="localhost",
-    #     user="mybatis",
-    #     password="mybatis",
-    #     database="mybatis",
-    #     autocommit=False,
-    # )
     connection = ConnectionFactory.get_connection(
             dbms_name='postgresql',
             host="localhost",
@@ -167,8 +159,8 @@ def test_delete(db_connection):
     assert ret[0]['price'] == 100
 
 def test_insert(db_connection):
-    mb = Mybatis(db_connection, "mapper", postgresql_primary_key_name="id")
-    ret = mb.insert("testInsert", {"name": "Candy", "category": "B", "price": 200})
+    mb = Mybatis(db_connection, "mapper")
+    ret = mb.insert("testInsert", {"name": "Candy", "category": "B", "price": 200}, primary_key="id")
     assert ret == 3
 
     ret = mb.select_many('testBasicMany', {})

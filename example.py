@@ -32,7 +32,7 @@ def main():
     # sql, param_list = mm.insert("testInsertSelective", {'name': 'Candy', 'category': "C", 'price':500})
     # print(sql, param_list)
 
-    sql, param_list = mm.insert("test_returning_id.insert", {'name': 'Candy', 'category': "C", 'price':500, '__need_returning_id__':'fid'})
+    sql, param_list = mm.insert("test_returning_id.insert", {'name': 'Candy', 'category': "C", 'price':500}, primary_key='fid')
     print(sql, param_list)
 
     # cur.execute(sql, param_list, multi=True)
