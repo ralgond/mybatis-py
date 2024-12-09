@@ -9,7 +9,7 @@ from mybatis import Mybatis, ConnectionFactory
 def db_connection():
     # 配置数据库连接
     connection = ConnectionFactory.get_connection(
-        dbms_name="mysql",
+        dbms_name="postgresql",
         host="localhost",
         user="mybatis",
         password="mybatis",
@@ -19,7 +19,7 @@ def db_connection():
     cursor = connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS fruits")
     create_table_sql = '''CREATE TABLE IF NOT EXISTS fruits (
-        id INT AUTO_INCREMENT PRIMARY KEY, 
+        id SERIAL PRIMARY KEY, 
         name VARCHAR(100),
         category VARCHAR(100),
         price int)

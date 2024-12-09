@@ -95,3 +95,12 @@ def test_dollar():
     assert sql == "SELECT * from fruits_20241204 where id=?"
     assert len(param_list) == 1
     assert param_list[0] == 1
+
+def test_insert_returning_id():
+    mm = MapperManager()
+    mm.read_mapper_xml_file("mapper/test_returning_id.xml")
+
+    sql, param_list = mm.insert("test_returning_id.insert",
+                                {'name': 'Candy', 'category': "C", 'price': 500, '__need_returning_id__': 'fid'})
+    assert sql == "INSERT INTO fruits (name, category, price) VALUES (?, ?, ?) RETURNING fid"
+    assert param_list == ['Candy', 'C', 500]

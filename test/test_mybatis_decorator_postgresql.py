@@ -207,7 +207,7 @@ def test_insert(postgresql_db_connection):
     def select_many():
         pass
 
-    @mb.Insert("INSERT INTO fruits (name, category, price) VALUES (#{name}, #{category}, #{price})")
+    @mb.Insert("INSERT INTO fruits (name, category, price) VALUES (#{name}, #{category}, #{price})", primary_key="id")
     def insert(name:str, category:str, price:int):
         pass
 

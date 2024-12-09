@@ -1,6 +1,7 @@
 from flask import Flask
-import mysql.connector
-from mybatis import Mybatis
+
+import mybatis.errors
+from mybatis import Mybatis, ConnectionFactory
 import orjson as json
 import functools
 
@@ -21,14 +22,15 @@ def make_connection_and_mybatis():
 
     if conn is None:
         try:
-            conn = mysql.connector.connect(
+            conn = ConnectionFactory.get_connection(
+                            dbms_name="postgresql",
                             host="localhost",
                             user="mybatis",  
                             password="mybatis", 
-                            database="mybatis",
-                            autocommit=True
+                            database="mybatis"
             )
             mb.conn = conn
+            mb.conn.set_autocommit(False)
                 
             return True
             
@@ -63,7 +65,7 @@ def select_many():
 def insert():
     pass
 
-def mysql_auto_reconnect(func):
+def sql_auto_reconnect(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         global connection_error
@@ -72,32 +74,27 @@ def mysql_auto_reconnect(func):
             if ret is False:
                 return error_string, 500
 
-
-
             ret = func(*args, **kwargs)
             return ret, 200
 
-        except mysql.connector.errors.Error as e:
+        except mybatis.errors.DatabaseError as e:
             connection_error = True
             return str(e), 500
         except Exception as e:
             return str(e), 500
 
-    #wrapper.__name__ = func.__name__
-    #wrapper.__doc__ = func.__doc__
-
     return wrapper
 
 
 @app.route('/')
-@mysql_auto_reconnect
+@sql_auto_reconnect
 def hello():
     ret = select_many()
     return json.dumps(ret)
 
 
 @app.route('/insert')
-@mysql_auto_reconnect
+@sql_auto_reconnect
 def do_insert():
     ret = insert()
     return json.dumps(ret)

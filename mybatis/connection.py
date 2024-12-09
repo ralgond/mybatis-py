@@ -1,4 +1,5 @@
 import re
+import time
 from abc import ABC, abstractmethod
 from typing import Optional, Sequence
 
@@ -7,6 +8,9 @@ from mysql.connector.abstracts import MySQLConnectionAbstract, MySQLCursorAbstra
 import mysql.connector
 from psycopg2.extensions import connection as PostgreSQLConnectionRaw
 from psycopg2.extensions import cursor as PostgreSQLCursorRaw
+
+from .errors import DatabaseError
+
 
 class AbstractCursor(ABC):
     @abstractmethod
@@ -66,13 +70,24 @@ class AbstractConnection(ABC):
     def rollback(self):
         pass
 
+    @abstractmethod
+    def need_returning_id(self):
+        pass
+
+    @abstractmethod
+    def reconnect(self, attempts, delay):
+        pass
+
 
 class MySQLCursor(AbstractCursor):
     def __init__(self, cursor: MySQLCursorAbstract, *args, **kwargs):
         self.cursor = cursor
 
     def execute(self, query: str, param_list : Sequence = None):
-        return self.cursor.execute(query, param_list)
+        try:
+            return self.cursor.execute(query, param_list)
+        except mysql.connector.Error as err:
+            raise DatabaseError(str(err))
 
     def rowcount(self):
         return self.cursor.rowcount
@@ -84,16 +99,28 @@ class MySQLCursor(AbstractCursor):
         return self.cursor.description
 
     def fetchone(self):
-        return self.cursor.fetchone()
+        try:
+            return self.cursor.fetchone()
+        except mysql.connector.Error as err:
+            raise DatabaseError(str(err))
 
     def fetchall(self):
-        return self.cursor.fetchall()
+        try:
+            return self.cursor.fetchall()
+        except mysql.connector.Error as err:
+            raise DatabaseError(str(err))
 
     def fetchmany(self, size: int):
-        return self.cursor.fetchmany(size)
+        try:
+            return self.cursor.fetchmany(size)
+        except mysql.connector.Error as err:
+            raise DatabaseError(str(err))
 
     def close(self):
-        self.cursor.close()
+        try:
+            self.cursor.close()
+        except mysql.connector.Error as err:
+            raise DatabaseError(str(err))
 
     def __enter__(self):
         return self
@@ -110,7 +137,10 @@ class MySQLConnection(AbstractConnection):
         self.conn = conn
 
     def cursor(self, *args, **kwargs) -> AbstractCursor:
-        return MySQLCursor(cursor=self.conn.cursor(*args, **kwargs))
+        try:
+            return MySQLCursor(cursor=self.conn.cursor(*args, **kwargs))
+        except mysql.connector.Error as err:
+            raise DatabaseError(str(err))
 
     def close(self):
         self.conn.close()
@@ -122,10 +152,25 @@ class MySQLConnection(AbstractConnection):
         self.set_autocommit(False)
 
     def commit(self):
-        self.conn.commit()
+        try:
+            self.conn.commit()
+        except mysql.connector.Error as err:
+            raise DatabaseError(str(err))
 
     def rollback(self):
-        self.conn.rollback()
+        try:
+            self.conn.rollback()
+        except mysql.connector.Error as err:
+            raise DatabaseError(str(err))
+
+    def need_returning_id(self):
+        return False
+
+    def reconnect(self, attempts, delay):
+        try:
+            self.conn.reconnect(attempts, delay)
+        except mysql.connector.Error as err:
+            raise DatabaseError(str(err))
 
 class PostgreSQLCursor(AbstractCursor):
     def __init__(self, cursor: PostgreSQLCursorRaw, prepared=False):
@@ -135,28 +180,48 @@ class PostgreSQLCursor(AbstractCursor):
 
     def execute(self, query: str, param_list:Sequence = None):
         query = self.replace_pattern.sub("%s", query)
-        return self.cursor.execute(query, param_list)
+        try:
+            return self.cursor.execute(query, param_list)
+        except psycopg2.errors.Error as err:
+            raise DatabaseError(str(err))
 
     def rowcount(self):
         return self.cursor.rowcount
 
     def lastrowid(self):
-        return self.cursor.fetchone()[0]
+        ret = None
+        try:
+            ret = self.cursor.fetchone()
+        except psycopg2.errors.Error as err:
+            raise DatabaseError(str(err))
+        return ret[0]
 
     def description(self):
         return self.cursor.description
 
     def fetchone(self):
-        return self.cursor.fetchone()
+        try:
+            return self.cursor.fetchone()
+        except psycopg2.errors.Error as err:
+            raise DatabaseError(str(err))
 
     def fetchall(self):
-        return self.cursor.fetchall()
+        try:
+            return self.cursor.fetchall()
+        except psycopg2.errors.Error as err:
+            raise DatabaseError(str(err))
 
     def fetchmany(self, size: int):
-        return self.cursor.fetchmany(size)
+        try:
+            return self.cursor.fetchmany(size)
+        except psycopg2.errors.Error as err:
+            raise DatabaseError(str(err))
 
     def close(self):
-        self.cursor.close()
+        try:
+            self.cursor.close()
+        except psycopg2.errors.Error as err:
+            raise DatabaseError(str(err))
 
     def __enter__(self):
         return self
@@ -171,14 +236,17 @@ class PostgreSQLCursor(AbstractCursor):
 class PostgreSQLConnection(AbstractConnection):
     def __init__(self, conn: PostgreSQLConnectionRaw):
         self.conn = conn
-        self.prepared = False
+        # self.prepared = False
 
     def cursor(self, *args, **kwargs) -> AbstractCursor:
         prepared = False
         if 'prepared' in kwargs:
             prepared = kwargs['prepared']
             del kwargs['prepared']
-        return PostgreSQLCursor(cursor=self.conn.cursor(*args, **kwargs), prepared=prepared)
+        try:
+            return PostgreSQLCursor(cursor=self.conn.cursor(*args, **kwargs), prepared=prepared)
+        except psycopg2.errors.Error as err:
+            raise DatabaseError(str(err))
 
     def close(self):
         self.conn.close()
@@ -190,10 +258,33 @@ class PostgreSQLConnection(AbstractConnection):
         pass
 
     def commit(self):
-        self.conn.commit()
+        try:
+            self.conn.commit()
+        except psycopg2.errors.Error as err:
+            raise DatabaseError(str(err))
 
     def rollback(self):
-        self.conn.rollback()
+        try:
+            self.conn.rollback()
+        except psycopg2.errors.Error as err:
+            raise DatabaseError(str(err))
+
+    def need_returning_id(self):
+        return True
+
+    def reconnect(self, attempts, delay):
+        for i in range(attempts):
+            try:
+                if self.conn.closed:
+                    self.conn = psycopg2.connect(**self.connect_kwargs)
+                if self.conn:
+                    break
+            except psycopg2.errors.OperationalError as err:
+                time.sleep(delay)
+        if self.conn is not None and self.conn.closed is False:
+            return
+        else:
+            raise DatabaseError(str("Reconnecting failed."))
 
 
 class ConnectionFactory(ABC):
@@ -210,4 +301,8 @@ class ConnectionFactory(ABC):
             conn = psycopg2.connect(
                 **kwargs
             )
-            return PostgreSQLConnection(conn)
+            ret_conn = PostgreSQLConnection(conn)
+            ret_conn.__setattr__("connect_kwargs", kwargs)
+            return ret_conn
+        else:
+            raise NotImplementedError(dbms_name)

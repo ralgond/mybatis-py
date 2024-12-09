@@ -179,17 +179,18 @@ Based on security considerations, in order to prevent SQL injection, it is recom
 mybatis-py maintains a cache pool for each connection. The elimination strategy is LRU. You can define the maximum byte capacity of the pool. If you do not want to use cache, you can set the parameter configuration. The code is as follows:
 ```python
 from mybatis import *
-import mysql.connector
 
 def main():
-    conn1 = mysql.connector.connect(
+    conn1 = ConnectionFactory.get_connection(
+        dbms_name="mysql",
         host="localhost",
         user="mybatis",
         password="mybatis",
         database="mybatis"
     )
 
-    conn2 = mysql.connector.connect(
+    conn2 = ConnectionFactory.get_connection(
+        dbms_name="mysql",
         host="localhost",
         user="mybatis",
         password="mybatis",
@@ -206,9 +207,10 @@ In order to prevent users from always getting old data, the cache will determine
 ### Auto Reconnecting
 ```python
 from flask import Flask
-import mysql.connector
-from mybatis import Mybatis
-import json
+
+import mybatis.errors
+from mybatis import Mybatis, ConnectionFactory
+import orjson as json
 import functools
 
 app = Flask(__name__)
@@ -228,14 +230,15 @@ def make_connection_and_mybatis():
 
     if conn is None:
         try:
-            conn = mysql.connector.connect(
+            conn = ConnectionFactory.get_connection(
+                            dbms_name="postgresql",
                             host="localhost",
                             user="mybatis",  
                             password="mybatis", 
-                            database="mybatis",
-                            autocommit=False
+                            database="mybatis"
             )
             mb.conn = conn
+            mb.conn.set_autocommit(False)
                 
             return True
             
@@ -270,7 +273,7 @@ def select_many():
 def insert():
     pass
 
-def mysql_auto_reconnect(func):
+def sql_auto_reconnect(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         global connection_error
@@ -282,7 +285,7 @@ def mysql_auto_reconnect(func):
             ret = func(*args, **kwargs)
             return ret, 200
 
-        except mysql.connector.errors.Error as e:
+        except mybatis.errors.DatabaseError as e:
             connection_error = True
             return str(e), 500
         except Exception as e:
@@ -292,15 +295,19 @@ def mysql_auto_reconnect(func):
 
 
 @app.route('/')
-@mysql_auto_reconnect
+@sql_auto_reconnect
 def hello():
     ret = select_many()
     return json.dumps(ret)
 
 
 @app.route('/insert')
-@mysql_auto_reconnect
+@sql_auto_reconnect
 def do_insert():
     ret = insert()
     return json.dumps(ret)
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
 ```

@@ -5,6 +5,7 @@ import mysql.connector.errors
 from .mapper_manager import MapperManager
 from .cache import Cache, CacheKey
 from .connection import AbstractConnection, AbstractCursor
+from .errors import DatabaseError
 
 import os
 from pympler import asizeof
@@ -53,6 +54,8 @@ class Mybatis(object):
         with self.conn.cursor(prepared=True) as cursor:
             cursor.execute(sql, param_list)
             ret = cursor.fetchone()
+            self.conn.commit()
+
             if ret is None:
                 return None
             column_name = [item[0] for item in cursor.description()]
@@ -73,7 +76,6 @@ class Mybatis(object):
 
         with self.conn.cursor(prepared=True) as cursor:
             cursor.execute(sql, param_list)
-            # ret = cursor.fetchall()
             ret = None
             res_list = []
             memory_used = 0
@@ -82,6 +84,8 @@ class Mybatis(object):
                 if memory_used > self.max_result_bytes:
                     raise Exception("memory limit exceeded")
                 res_list.append(item)
+
+            self.conn.commit()
 
             if len(res_list) == 0:
                 res_list = None
@@ -107,7 +111,7 @@ class Mybatis(object):
                 affected_rows = cursor.rowcount()
                 self.conn.commit()
                 return affected_rows
-            except mysql.connector.errors.Error as e:
+            except DatabaseError as e:
                 self.conn.rollback()
                 raise e
 
@@ -127,16 +131,19 @@ class Mybatis(object):
                 affected_rows = cursor.rowcount()
                 self.conn.commit()
                 return affected_rows
-            except mysql.connector.errors.Error as e:
+            except DatabaseError as e:
                 self.conn.rollback()
                 raise e
 
-    def insert(self, id:str, params:dict) -> int:
+    def insert(self, id:str, params:dict, primary_key:str=None) -> int:
         '''
         :param id: mapper id
         :param params:
         :return: last auto incremented row id
         '''
+        if self.conn.need_returning_id() and primary_key:
+            params['__need_returning_id__'] = str(primary_key)
+
         sql, param_list = self.mapper_manager.insert(id, params)
 
         res = self.cache.clear()
@@ -147,7 +154,7 @@ class Mybatis(object):
                 last_id = cursor.lastrowid()
                 self.conn.commit()
                 return last_id
-            except mysql.connector.errors.Error as e:
+            except DatabaseError as e:
                 self.conn.rollback()
                 raise e
 
@@ -170,6 +177,7 @@ class Mybatis(object):
                 with self.conn.cursor(prepared=True) as cursor:
                     cursor.execute(sql, param_list)
                     ret = cursor.fetchone()
+                    self.conn.commit()
                     if ret is None:
                         return None
 
@@ -204,7 +212,6 @@ class Mybatis(object):
                 memory_used = 0
                 with self.conn.cursor(prepared=True) as cursor:
                     cursor.execute(sql, param_list)
-                    # ret = cursor.fetchall()
                     ret = None
                     res_list = []
                     for item in fetch_rows(cursor, batch_size=1000):
@@ -212,6 +219,7 @@ class Mybatis(object):
                         if memory_used > self.max_result_bytes:
                             raise Exception("memory limit exceeded")
                         res_list.append(item)
+                    self.conn.commit()
 
                     if len(res_list) == 0:
                         res_list = None
@@ -223,7 +231,7 @@ class Mybatis(object):
             return wrapper
         return decorator
 
-    def Insert(self, unparsed_sql:str) -> int:
+    def Insert(self, unparsed_sql:str, primary_key:str=None) -> int:
         def decorator(func):
             def wrapper(*args, **kwargs):
                 params = {}
@@ -233,8 +241,8 @@ class Mybatis(object):
                 sql, param_list = self.mapper_manager._to_prepared_statement(unparsed_sql, params)
                 sql = self.mapper_manager._to_replace(sql, params)
 
-                if self.postgresql_primary_key_name:
-                    sql += (" RETURNING " + str(self.postgresql_primary_key_name))
+                if self.conn.need_returning_id() and primary_key:
+                    sql += (" RETURNING " + str(primary_key))
 
                 res = self.cache.clear()
 
@@ -244,7 +252,7 @@ class Mybatis(object):
                         last_id = cursor.lastrowid()
                         self.conn.commit()
                         return last_id
-                    except mysql.connector.errors.Error as e:
+                    except DatabaseError as e:
                         self.conn.rollback()
                         raise e
             return wrapper
@@ -268,7 +276,7 @@ class Mybatis(object):
                         affected_rows = cursor.rowcount()
                         self.conn.commit()
                         return affected_rows
-                    except mysql.connector.errors.Error as e:
+                    except DatabaseError as e:
                         self.conn.rollback()
                         raise e
 
@@ -293,7 +301,7 @@ class Mybatis(object):
                         affected_rows = cursor.rowcount()
                         self.conn.commit()
                         return affected_rows
-                    except mysql.connector.errors.Error as e:
+                    except DatabaseError as e:
                         self.conn.rollback()
                         raise e
 
