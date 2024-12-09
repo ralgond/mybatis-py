@@ -15,18 +15,17 @@ def db_connection():
     #     autocommit=False,
     # )
     connection = ConnectionFactory.get_connection(
-            dbms_name='mysql',
+            dbms_name='postgresql',
             host="localhost",
             user="mybatis",
             password="mybatis",
-            database="mybatis",
-            autocommit=False,
+            database="mybatis"
         )
     connection.start_transaction()
     cursor = connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS fruits")
     create_table_sql = '''CREATE TABLE IF NOT EXISTS fruits (
-        id INT AUTO_INCREMENT PRIMARY KEY, 
+        id SERIAL PRIMARY KEY, 
         name VARCHAR(100),
         category VARCHAR(100),
         price int)
@@ -168,7 +167,7 @@ def test_delete(db_connection):
     assert ret[0]['price'] == 100
 
 def test_insert(db_connection):
-    mb = Mybatis(db_connection, "mapper")
+    mb = Mybatis(db_connection, "mapper", postgresql_primary_key_name="id")
     ret = mb.insert("testInsert", {"name": "Candy", "category": "B", "price": 200})
     assert ret == 3
 

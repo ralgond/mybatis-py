@@ -1,19 +1,25 @@
 import pytest
-import mysql.connector
 
-from mybatis import Mybatis
+from mybatis import Mybatis, ConnectionFactory
 
 
 @pytest.fixture(scope="function")
-def db_connection():
+def mysql_db_connection():
     # 配置数据库连接
-    connection = mysql.connector.connect(
-        host="localhost",
-        user="mybatis",
-        password="mybatis",
-        database="mybatis",
-        autocommit=False,
-    )
+    # connection = mysql.connector.connect(
+    #     host="localhost",
+    #     user="mybatis",
+    #     password="mybatis",
+    #     database="mybatis",
+    #     autocommit=False,
+    # )
+    connection = ConnectionFactory.get_connection(
+            dbms_name='mysql',
+            host="localhost",
+            user="mybatis",
+            password="mybatis",
+            database="mybatis",
+        )
     connection.start_transaction()
     cursor = connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS fruits")
@@ -28,7 +34,6 @@ def db_connection():
     cursor.execute("INSERT INTO fruits (name, category, price) VALUES ('Alice', 'A', 100)")
     cursor.execute("INSERT INTO fruits (name, category, price) VALUES ('Bob', 'B', 200)")
     connection.commit()
-    cursor.close()
 
     # 提供数据库连接给测试用例
     yield connection
@@ -36,8 +41,8 @@ def db_connection():
     # 清理数据和关闭连接
     connection.close()
 
-def test_select_one(db_connection):
-    mb = Mybatis(db_connection, "mapper", cache_memory_limit=50*1024*1024)
+def test_select_one(mysql_db_connection):
+    mb = Mybatis(mysql_db_connection, "mapper", cache_memory_limit=50*1024*1024)
 
     @mb.SelectOne("SELECT * FROM fruits WHERE id=#{id}")
     def select_one(id:int):
@@ -60,8 +65,8 @@ def test_select_one(db_connection):
     assert ret['category'] == 'A'
     assert ret['price'] == 100
 
-def test_select_one_none(db_connection):
-    mb = Mybatis(db_connection, "mapper")
+def test_select_one_none(mysql_db_connection):
+    mb = Mybatis(mysql_db_connection, "mapper")
 
     @mb.SelectOne("SELECT * FROM fruits WHERE id=#{id}")
     def select_one(id: int):
@@ -70,8 +75,8 @@ def test_select_one_none(db_connection):
     ret = select_one(id=3)
     assert ret is None
 
-def test_select_many(db_connection):
-    mb = Mybatis(db_connection, "mapper", cache_memory_limit=50*1024*1024)
+def test_select_many(mysql_db_connection):
+    mb = Mybatis(mysql_db_connection, "mapper", cache_memory_limit=50*1024*1024)
     @mb.SelectMany("SELECT * FROM fruits")
     def select_many():
         pass
@@ -90,8 +95,8 @@ def test_select_many(db_connection):
     assert ret[1]['price'] == 200
 
 
-def test_select_many_none(db_connection):
-    mb = Mybatis(db_connection, "mapper")
+def test_select_many_none(mysql_db_connection):
+    mb = Mybatis(mysql_db_connection, "mapper")
     @mb.SelectMany("SELECT * FROM fruits WHERE id=5")
     def select_many():
         pass
@@ -100,8 +105,8 @@ def test_select_many_none(db_connection):
     assert ret is None
 
 
-def test_update(db_connection):
-    mb = Mybatis(db_connection, "mapper")
+def test_update(mysql_db_connection):
+    mb = Mybatis(mysql_db_connection, "mapper")
 
     @mb.SelectMany("SELECT * FROM fruits")
     def select_many():
@@ -133,8 +138,8 @@ def test_update(db_connection):
 
     assert mb.cache.empty() is True
 
-def test_update_with_cache(db_connection):
-    mb = Mybatis(db_connection, "mapper", cache_memory_limit=50*1024*1024)
+def test_update_with_cache(mysql_db_connection):
+    mb = Mybatis(mysql_db_connection, "mapper", cache_memory_limit=50*1024*1024)
 
     @mb.SelectMany("SELECT * FROM fruits")
     def select_many():
@@ -172,8 +177,8 @@ def test_update_with_cache(db_connection):
 
     assert mb.cache.empty() is False
 
-def test_delete(db_connection):
-    mb = Mybatis(db_connection, "mapper")
+def test_delete(mysql_db_connection):
+    mb = Mybatis(mysql_db_connection, "mapper")
 
     @mb.SelectMany("SELECT * FROM fruits")
     def select_many():
@@ -195,8 +200,8 @@ def test_delete(db_connection):
     assert ret[0]['category'] == 'A'
     assert ret[0]['price'] == 100
 
-def test_insert(db_connection):
-    mb = Mybatis(db_connection, "mapper")
+def test_insert(mysql_db_connection):
+    mb = Mybatis(mysql_db_connection, "mapper")
 
     @mb.SelectMany("SELECT * FROM fruits")
     def select_many():

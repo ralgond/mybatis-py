@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mybatis',
-    version='0.0.15',
+    version='0.0.16',
     description='A python ORM like mybatis.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',  # 如果你使用的是Markdown格式的README
@@ -13,7 +13,8 @@ setup(
     install_requires=[
         'mysql-connector-python>=9.0.0',
         'Pympler>=1.1',
-        'orjson>=3.10.12'
+        'orjson>=3.10.12',
+        'psycopg2-binary>=2.9.10'
     ],
     classifiers=[
         'Programming Language :: Python :: 3',

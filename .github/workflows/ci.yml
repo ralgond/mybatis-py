@@ -15,6 +15,14 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mybatis
+          POSTGRES_PASSWORD: mybatis
+          POSTGRES_DB: mybatis
+        ports:
+          - 5432:5432
       mysql:
         image: mysql:5.7
         env:
@@ -36,7 +44,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pytest pytest-cov mysql-connector-python Pympler orjson
+          pip install pytest pytest-cov mysql-connector-python Pympler orjson psycopg2-binary
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until pg_isready -h localhost -p 5432 -U mybatis; do
+            echo "Waiting for PostgreSQL..."
+          sleep 2
+          done
+          echo 'PostgreSQL is ready!'
 
       - name: Set up MySQL client
         run: sudo apt-get install mysql-client

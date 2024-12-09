@@ -4,6 +4,7 @@ import mysql.connector.errors
 
 from .mapper_manager import MapperManager
 from .cache import Cache, CacheKey
+from .connection import AbstractConnection, AbstractCursor
 
 import os
 from pympler import asizeof
@@ -13,7 +14,7 @@ def fetch_rows(cursor, batch_size=1000):
         rows = cursor.fetchmany(batch_size)
         if not rows:
             break
-        column_name = [item[0] for item in cursor.description]
+        column_name = [item[0] for item in cursor.description()]
         res_list = []
         for row in rows:
             d = {}
@@ -25,10 +26,11 @@ def fetch_rows(cursor, batch_size=1000):
             yield ret
 
 class Mybatis(object):
-    def __init__(self, conn, mapper_path:str, cache_memory_limit:Optional[int]=None, cache_max_live_ms:int=5*1000,
-                 max_result_bytes:int=100*1024*1024):
+    def __init__(self, conn:AbstractConnection, mapper_path:str, cache_memory_limit:Optional[int]=None, cache_max_live_ms:int=5*1000,
+                 max_result_bytes:int=100*1024*1024, postgresql_primary_key_name=None):
         self.conn = conn
-        self.mapper_manager = MapperManager()
+        self.postgresql_primary_key_name = postgresql_primary_key_name
+        self.mapper_manager = MapperManager(postgresql_primary_key_name)
         self.max_result_bytes = max_result_bytes
 
         if cache_memory_limit is not None:
@@ -53,7 +55,7 @@ class Mybatis(object):
             ret = cursor.fetchone()
             if ret is None:
                 return None
-            column_name = [item[0] for item in cursor.description]
+            column_name = [item[0] for item in cursor.description()]
             res = {}
             for idx, item in enumerate(column_name):
                 res[item] = ret[idx]
@@ -102,7 +104,7 @@ class Mybatis(object):
         with self.conn.cursor(prepared=True) as cursor:
             try:
                 cursor.execute(sql, param_list)
-                affected_rows = cursor.rowcount
+                affected_rows = cursor.rowcount()
                 self.conn.commit()
                 return affected_rows
             except mysql.connector.errors.Error as e:
@@ -122,7 +124,7 @@ class Mybatis(object):
         with self.conn.cursor(prepared=True) as cursor:
             try:
                 cursor.execute(sql, param_list)
-                affected_rows = cursor.rowcount
+                affected_rows = cursor.rowcount()
                 self.conn.commit()
                 return affected_rows
             except mysql.connector.errors.Error as e:
@@ -142,8 +144,8 @@ class Mybatis(object):
         with self.conn.cursor(prepared=True) as cursor:
             try:
                 cursor.execute(sql, param_list)
+                last_id = cursor.lastrowid()
                 self.conn.commit()
-                last_id = cursor.lastrowid
                 return last_id
             except mysql.connector.errors.Error as e:
                 self.conn.rollback()
@@ -171,7 +173,7 @@ class Mybatis(object):
                     if ret is None:
                         return None
 
-                    column_name = [item[0] for item in cursor.description]
+                    column_name = [item[0] for item in cursor.description()]
                     res = {}
                     for idx, item in enumerate(column_name):
                         res[item] = ret[idx]
@@ -231,13 +233,16 @@ class Mybatis(object):
                 sql, param_list = self.mapper_manager._to_prepared_statement(unparsed_sql, params)
                 sql = self.mapper_manager._to_replace(sql, params)
 
+                if self.postgresql_primary_key_name:
+                    sql += (" RETURNING " + str(self.postgresql_primary_key_name))
+
                 res = self.cache.clear()
 
                 with self.conn.cursor(prepared=True) as cursor:
                     try:
                         cursor.execute(sql, param_list)
+                        last_id = cursor.lastrowid()
                         self.conn.commit()
-                        last_id = cursor.lastrowid
                         return last_id
                     except mysql.connector.errors.Error as e:
                         self.conn.rollback()
@@ -260,7 +265,7 @@ class Mybatis(object):
                 with self.conn.cursor(prepared=True) as cursor:
                     try:
                         cursor.execute(sql, param_list)
-                        affected_rows = cursor.rowcount
+                        affected_rows = cursor.rowcount()
                         self.conn.commit()
                         return affected_rows
                     except mysql.connector.errors.Error as e:
@@ -285,7 +290,7 @@ class Mybatis(object):
                 with self.conn.cursor(prepared=True) as cursor:
                     try:
                         cursor.execute(sql, param_list)
-                        affected_rows = cursor.rowcount
+                        affected_rows = cursor.rowcount()
                         self.conn.commit()
                         return affected_rows
                     except mysql.connector.errors.Error as e:

@@ -1,11 +1,10 @@
 import pytest
-import mysql.connector
 
-from mybatis import Mybatis
-from mybatis import ConnectionFactory
+from mybatis import Mybatis, ConnectionFactory
+
 
 @pytest.fixture(scope="function")
-def db_connection():
+def postgresql_db_connection():
     # 配置数据库连接
     # connection = mysql.connector.connect(
     #     host="localhost",
@@ -15,18 +14,17 @@ def db_connection():
     #     autocommit=False,
     # )
     connection = ConnectionFactory.get_connection(
-            dbms_name='mysql',
+            dbms_name='postgresql',
             host="localhost",
             user="mybatis",
             password="mybatis",
             database="mybatis",
-            autocommit=False,
         )
     connection.start_transaction()
     cursor = connection.cursor()
     cursor.execute("DROP TABLE IF EXISTS fruits")
     create_table_sql = '''CREATE TABLE IF NOT EXISTS fruits (
-        id INT AUTO_INCREMENT PRIMARY KEY, 
+        id SERIAL PRIMARY KEY, 
         name VARCHAR(100),
         category VARCHAR(100),
         price int)
@@ -43,9 +41,15 @@ def db_connection():
     # 清理数据和关闭连接
     connection.close()
 
-def test_select_one(db_connection):
-    mb = Mybatis(db_connection, "mapper", cache_memory_limit=50*1024*1024)
-    ret = mb.select_one('testBasic', {})
+def test_select_one(postgresql_db_connection):
+    mb = Mybatis(postgresql_db_connection, "mapper", cache_memory_limit=50*1024*1024)
+
+    @mb.SelectOne("SELECT * FROM fruits WHERE id=#{id}")
+    def select_one(id:int):
+        pass
+
+    ret = select_one(id=1)
+
     assert ret is not None
     assert len(ret) == 4
     assert ret['id'] == 1
@@ -61,16 +65,23 @@ def test_select_one(db_connection):
     assert ret['category'] == 'A'
     assert ret['price'] == 100
 
+def test_select_one_none(postgresql_db_connection):
+    mb = Mybatis(postgresql_db_connection, "mapper")
 
+    @mb.SelectOne("SELECT * FROM fruits WHERE id=#{id}")
+    def select_one(id: int):
+        pass
 
-def test_select_one_none(db_connection):
-    mb = Mybatis(db_connection, "mapper")
-    ret = mb.select_one('testBasicNone', {})
+    ret = select_one(id=3)
     assert ret is None
 
-def test_select_many(db_connection):
-    mb = Mybatis(db_connection, "mapper", cache_memory_limit=50*1024*1024)
-    ret = mb.select_many('testBasicMany', {})
+def test_select_many(postgresql_db_connection):
+    mb = Mybatis(postgresql_db_connection, "mapper", cache_memory_limit=50*1024*1024)
+    @mb.SelectMany("SELECT * FROM fruits")
+    def select_many():
+        pass
+
+    ret = select_many()
     assert ret is not None
     assert isinstance(ret, list)
     assert len(ret) == 2
@@ -83,36 +94,36 @@ def test_select_many(db_connection):
     assert ret[1]['category'] == 'B'
     assert ret[1]['price'] == 200
 
-    ret = mb.select_many('testBasicMany', {})
-    assert ret is not None
-    assert isinstance(ret, list)
-    assert len(ret) == 2
-    assert ret[0]['id'] == 1
-    assert ret[0]['name'] == 'Alice'
-    assert ret[0]['category'] == 'A'
-    assert ret[0]['price'] == 100
-    assert ret[1]['id'] == 2
-    assert ret[1]['name'] == 'Bob'
-    assert ret[1]['category'] == 'B'
-    assert ret[1]['price'] == 200
 
-def test_select_many_none(db_connection):
-    mb = Mybatis(db_connection, "mapper")
-    ret = mb.select_many('testBasicNone', {})
+def test_select_many_none(postgresql_db_connection):
+    mb = Mybatis(postgresql_db_connection, "mapper")
+    @mb.SelectMany("SELECT * FROM fruits WHERE id=5")
+    def select_many():
+        pass
+
+    ret = select_many()
     assert ret is None
 
-def test_update(db_connection):
-    mb = Mybatis(db_connection, "mapper")
-    mb.select_one('testBasic', {})
+
+def test_update(postgresql_db_connection):
+    mb = Mybatis(postgresql_db_connection, "mapper")
+
+    @mb.SelectMany("SELECT * FROM fruits")
+    def select_many():
+        pass
+
+    @mb.Update("UPDATE fruits SET name=#{name} WHERE id=#{id}")
+    def update(name:str, id:int):
+        pass
 
     assert mb.cache.empty() is True
 
-    ret = mb.update("testUpdate", {"name":"Candy", "id":2})
+    ret = update(name="Candy", id=2)
 
     assert mb.cache.empty() is True
 
     assert ret == 1
-    ret = mb.select_many('testBasicMany', {})
+    ret = select_many()
     assert ret is not None
     assert isinstance(ret, list)
     assert len(ret) == 2
@@ -127,19 +138,31 @@ def test_update(db_connection):
 
     assert mb.cache.empty() is True
 
+def test_update_with_cache(postgresql_db_connection):
+    mb = Mybatis(postgresql_db_connection, "mapper", cache_memory_limit=50*1024*1024)
 
-def test_update_with_cache(db_connection):
-    mb = Mybatis(db_connection, "mapper", cache_memory_limit=50*1024*1024)
-    mb.select_one('testBasic', {})
+    @mb.SelectMany("SELECT * FROM fruits")
+    def select_many():
+        pass
+
+    @mb.SelectOne("SELECT * FROM fruits WHERE id=1")
+    def select_one():
+        pass
+
+    @mb.Update("UPDATE fruits SET name=#{name} WHERE id=#{id}")
+    def update(name: str, id: int):
+        pass
+
+    select_one()
 
     assert mb.cache.empty() is False
 
-    ret = mb.update("testUpdate", {"name":"Candy", "id":2})
+    ret = update(name="Candy", id=2)
 
     assert mb.cache.empty() is True
 
     assert ret == 1
-    ret = mb.select_many('testBasicMany', {})
+    ret = select_many()
     assert ret is not None
     assert isinstance(ret, list)
     assert len(ret) == 2
@@ -154,11 +177,21 @@ def test_update_with_cache(db_connection):
 
     assert mb.cache.empty() is False
 
-def test_delete(db_connection):
-    mb = Mybatis(db_connection, "mapper")
-    ret = mb.delete("testDelete", {"id":2})
+def test_delete(postgresql_db_connection):
+    mb = Mybatis(postgresql_db_connection, "mapper")
+
+    @mb.SelectMany("SELECT * FROM fruits")
+    def select_many():
+        pass
+
+    @mb.Delete("DELETE FROM fruits WHERE id=#{id}")
+    def delete(id:int):
+        pass
+
+    ret = delete(id=2)
+
     assert ret == 1
-    ret = mb.select_many('testBasicMany', {})
+    ret = select_many()
     assert ret is not None
     assert isinstance(ret, list)
     assert len(ret) == 1
@@ -167,12 +200,22 @@ def test_delete(db_connection):
     assert ret[0]['category'] == 'A'
     assert ret[0]['price'] == 100
 
-def test_insert(db_connection):
-    mb = Mybatis(db_connection, "mapper")
-    ret = mb.insert("testInsert", {"name": "Candy", "category": "B", "price": 200})
+def test_insert(postgresql_db_connection):
+    mb = Mybatis(postgresql_db_connection, "mapper", postgresql_primary_key_name="id")
+
+    @mb.SelectMany("SELECT * FROM fruits")
+    def select_many():
+        pass
+
+    @mb.Insert("INSERT INTO fruits (name, category, price) VALUES (#{name}, #{category}, #{price})")
+    def insert(name:str, category:str, price:int):
+        pass
+
+    ret = insert(name="Candy", category="B", price=200)
+
     assert ret == 3
 
-    ret = mb.select_many('testBasicMany', {})
+    ret = select_many()
     assert ret is not None
     assert isinstance(ret, list)
     assert len(ret) == 3
