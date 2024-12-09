@@ -61,7 +61,7 @@ def select_one(id:int):
 def select_many():
     pass
 
-@mb.Insert("INSERT INTO fruits (name,category,price) VALUES ('Candy', 'C', 500)")
+@mb.Insert("INSERT INTO fruits (name,category,price) VALUES ('Candy', 'C', 500)", primary_key="id")
 def insert():
     pass
 

@@ -11,6 +11,7 @@ A python ORM like mybatis.
 pip install -U mybatis
 
 ### Create Database
+#### mysql
 ```sql
 CREATE DATABASE mybatis;
 
@@ -20,10 +21,22 @@ CREATE TABLE IF NOT EXISTS fruits (
         id INT AUTO_INCREMENT PRIMARY KEY, 
         name VARCHAR(100),
         category VARCHAR(100),
-        price int)
+        price int);
 
-INSERT INTO fruits (name, category, price) VALUES ('Alice', 'A', 100)
-INSERT INTO fruits (name, category, price) VALUES ('Bob', 'B', 200)
+INSERT INTO fruits (name, category, price) VALUES ('Alice', 'A', 100);
+INSERT INTO fruits (name, category, price) VALUES ('Bob', 'B', 200);
+```
+#### postgresql
+```sql
+CREATE TABLE if not exists fruits (
+        id SERIAL PRIMARY KEY, 
+        name VARCHAR(100),
+        category VARCHAR(100),
+        price int);
+        
+INSERT INTO fruits (name, category, price) VALUES ('Alice', 'A', 100);
+
+INSERT INTO fruits (name, category, price) VALUES ('Bob', 'B', 200);
 ```
 
 ### Write Code
@@ -35,6 +48,9 @@ Create a mapper directory, and create a file named mapper/test.xml, as follows:
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper>
+    <insert id="testInsert1">
+        INSERT INTO fruits (name, category, price) VALUES (#{name}, #{category}, #{price})
+    </insert>
     <select id="testBasic1">
         SELECT * from fruits where id=#{id}
     </select>
@@ -43,18 +59,18 @@ Create a mapper directory, and create a file named mapper/test.xml, as follows:
 Create a Python file named "test.py" as follows:
 ```python
 from mybatis import *
-import mysql.connector
 
 def main():
-    conn = mysql.connector.connect(
-        host="localhost",
-        user="mybatis",
-        password="mybatis",
-        database="mybatis"
-    )
+    conn = ConnectionFactory.get_connection(
+            dbms_name='mysql', # change to 'postgresql' if you are using PostgreSQL
+            host="localhost",
+            user="mybatis",
+            password="mybatis",
+            database="mybatis")
 
     mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024)
 
+    ret = mb.insert('testInsert1', {'name':'Alice', 'category':'C', 'price':500})
     ret = mb.select_one("testBasic1", {'id':1})
 
     print(ret)
@@ -66,15 +82,14 @@ if __name__ == "__main__":
 ## Decorator
 The example is as follows:
 ```python
-import mysql.connector
-from mybatis import Mybatis
+from mybatis import Mybatis, ConnectionFactory
 
-conn = mysql.connector.connect(
+conn = ConnectionFactory.get_connection(
+    dbms_name='mysql', # change to 'postgresql' if you are using PostgreSQL
     host="localhost",
     user="mybatis",
     password="mybatis",
-    database="mybatis"
-)
+    database="mybatis")
 
 mb = Mybatis(conn, "mapper", cache_memory_limit=50*1024*1024)
 
@@ -86,7 +101,7 @@ def get_one(id:int):
 def get_many():
     pass
 
-@mb.Insert("INSERT INTO fruits (name, category, price) VALUES (#{name}, #{category}, #{price})")
+@mb.Insert("INSERT INTO fruits (name, category, price) VALUES (#{name}, #{category}, #{price})", primary_key="id")
 def insert(name:str, category:str, price:int):
     pass
 
@@ -123,6 +138,9 @@ Create xml mapper as follows:
 <mapper namespace="test_namespace">
     <insert id="testInsert">
         INSERT INTO fruits (name, category, price) VALUES (#{name},#{category},#{price})
+        <if test="'__need_returning_id__' in params">
+            RETURNING id
+        </if>
     </insert>
     <delete id="testDelete">
         DELETE FROM fruits WHERE id=#{id}
@@ -182,20 +200,18 @@ from mybatis import *
 
 def main():
     conn1 = ConnectionFactory.get_connection(
-        dbms_name="mysql",
-        host="localhost",
-        user="mybatis",
-        password="mybatis",
-        database="mybatis"
-    )
+            dbms_name='mysql', # change to 'postgresql' if you are using PostgreSQL
+            host="localhost",
+            user="mybatis",
+            password="mybatis",
+            database="mybatis")
 
     conn2 = ConnectionFactory.get_connection(
-        dbms_name="mysql",
-        host="localhost",
-        user="mybatis",
-        password="mybatis",
-        database="mybatis"
-    )
+            dbms_name='mysql', # change to 'postgresql' if you are using PostgreSQL
+            host="localhost",
+            user="mybatis",
+            password="mybatis",
+            database="mybatis")
 
     mb1 = Mybatis(conn1, "mapper", cache_memory_limit=50*1024*1024) # Capacity limit is 50MB
     mb2 = Mybatis(conn2, "mapper", cache_memory_limit=None) # Disable caching
