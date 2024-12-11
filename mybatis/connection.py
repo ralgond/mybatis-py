@@ -20,68 +20,68 @@ from sqlite3 import Cursor as Sqlite3CursorRaw
 class AbstractCursor(ABC):
     @abstractmethod
     def execute(self, query: str, param_list : Sequence = None):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def rowcount(self):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def lastrowid(self):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def description(self):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def fetchone(self):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def fetchall(self):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def fetchmany(self, size: int):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def close(self):
-        pass
+        pass # pragma: no cover
 
 class AbstractConnection(ABC):
     @abstractmethod
     def cursor(self, *args, **kwargs) -> AbstractCursor:
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def close(self):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def set_autocommit(self, autocommit: bool):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def start_transaction(self):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def commit(self):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def rollback(self):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def need_returning_id(self):
-        pass
+        pass # pragma: no cover
 
     @abstractmethod
     def reconnect(self, attempts, delay):
-        pass
+        pass # pragma: no cover
 
 
 class MySQLCursor(AbstractCursor):
